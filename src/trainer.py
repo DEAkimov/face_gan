@@ -110,7 +110,7 @@ class Trainer:
             )
 
     def train(self, n_epoch):
-        print('start training for {} epoch')
+        print('start training for {} epoch'.format(n_epoch))
         for epoch in range(n_epoch):
             for i, (real_data, _) in tqdm(
                     enumerate(self.data_loader, 0),

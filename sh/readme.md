@@ -7,3 +7,6 @@ All experiments conducted on celeba faces, downloaded from
 criterion = bce, loss = simple, logdir = exp_0
 - exp_1: change criterion to mse
 - exp_2: criterion = bce, loss = relativistic
+- exp_3: criterion = mse, loss = relativistic
+- exp_4: criterion = bce, loss = relativistic_a
+- exp_5: criterion = mse, loss = relativistic_a
