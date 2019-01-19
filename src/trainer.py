@@ -37,8 +37,6 @@ class Trainer:
         self.loss_dis, self.loss_gen = loss
 
         # constants
-        self.real_label = 1
-        self.fake_label = 0
         self.batch_size = batch_size
         self.noise_size = noise_size
         self.logdir = logdir
@@ -85,12 +83,8 @@ class Trainer:
 
     def call_loss(self, loss, real_data):
         return loss(
-            self.criterion,
-            self.generator,
-            self.discriminator,
-            self.noise_size,
-            real_data,
-            self.device
+            self.criterion, self.generator, self.discriminator,
+            self.noise_size, real_data, self.device
         )
 
     def train_step(self, step, real_data):
@@ -116,7 +110,7 @@ class Trainer:
             )
 
     def train(self, n_epoch):
-        print('start training')
+        print('start training for {} epoch')
         for epoch in range(n_epoch):
             for i, (real_data, _) in tqdm(
                     enumerate(self.data_loader, 0),
