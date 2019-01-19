@@ -1,11 +1,9 @@
 # Plan
 - [x] GAN
-- [ ] SN-GAN
-- [ ] LSGAN
-- [ ] Relativistic GAN
-- [ ] BigGAN
+- [x] LSGAN
+- [x] Relativistic GAN
+- [ ] Big GAN
 
 # TODO
 - [ ] FID or Inception score
-- [ ] sh scripts for training
-- [ ] add option to trainer to choose loss function
+
