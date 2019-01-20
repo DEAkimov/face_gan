@@ -16,6 +16,11 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1, bias=False),
             nn.Tanh()
         )
+        self.init_print()
+
+    def init_print(self):
+        num_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        print('Generator initialized. #parameters = {}'.format(num_params))
 
     def forward(self, input_noise):
         input_noise = input_noise.unsqueeze(-1).unsqueeze(-1)  # add H and W dimensions
@@ -37,6 +42,11 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),  # [batch, 512, 4, 4]
             sn(nn.Conv2d(512, 1, kernel_size=4, bias=False))
         )
+        self.init_print()
+
+    def init_print(self):
+        num_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        print('Discriminator initialized. #parameters = {}'.format(num_params))
 
     def forward(self, image):
         conv = self.conv(image)
@@ -45,11 +55,11 @@ class Discriminator(nn.Module):
 
 if __name__ == '__main__':
     import torch
-    noise_size = 128
-    generator = Generator(noise_size)
+    ns = 128
+    generator = Generator(ns)
     discriminator = Discriminator()
     batch = 7
-    noise = torch.randn(batch, noise_size)
+    noise = torch.randn(batch, ns)
     generated = generator(noise)
     print(generated.size())
     discriminated = discriminator(generated)

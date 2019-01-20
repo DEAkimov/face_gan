@@ -18,21 +18,11 @@ loss_pairs = {
 }
 
 
-def update_statistics(criterion, dis_on_real, dis_on_fake):
-    if criterion is mse_loss:
-        dis_on_real = dis_on_real.mean().item()
-        dis_on_fake = dis_on_fake.mean().item()
-    else:
-        dis_on_real = torch.sigmoid(dis_on_real).mean().item()
-        dis_on_fake = torch.sigmoid(dis_on_fake).mean().item()
-    return dis_on_real, dis_on_fake
-
-
-def get_loader(path, batch_size):
+def get_loader(path, batch_size, image_size=64):
     data_set = ImageFolder(path,
                            transform=transforms.Compose([
-                               transforms.Resize(64),
-                               transforms.CenterCrop(64),
+                               transforms.Resize(image_size),
+                               transforms.CenterCrop(image_size),
                                transforms.ToTensor(),
                                transforms.Lambda(lambda x: 2. * x - 1.)
                            ]))

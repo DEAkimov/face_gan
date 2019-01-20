@@ -2,8 +2,9 @@ from tqdm import tqdm
 import torch
 from torch.optim import Adam
 
-from networks import Generator, Discriminator
-from writer import Writer
+from networks.dcgan import Generator, Discriminator
+from writer import Writer, FakeWriter
+from utils import get_loader
 
 
 class Trainer:

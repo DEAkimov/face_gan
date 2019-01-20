@@ -1,4 +1,15 @@
 import torch
+from torch.nn.functional import mse_loss
+
+
+def update_statistics(criterion, dis_on_real, dis_on_fake):
+    if criterion is mse_loss:
+        dis_on_real = dis_on_real.mean().item()
+        dis_on_fake = dis_on_fake.mean().item()
+    else:
+        dis_on_real = torch.sigmoid(dis_on_real).mean().item()
+        dis_on_fake = torch.sigmoid(dis_on_fake).mean().item()
+    return dis_on_real, dis_on_fake
 
 
 # simple gan loss
