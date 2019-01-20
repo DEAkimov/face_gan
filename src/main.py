@@ -2,19 +2,7 @@ import argparse
 from torch import cuda
 
 from trainer import Trainer
-from loss_functions import loss_dis, loss_gen, r_loss_dis, r_loss_gen, ra_loss_dis, ra_loss_gen
-from torch.nn.functional import binary_cross_entropy_with_logits, mse_loss
-
-criteria = {
-    'bce': binary_cross_entropy_with_logits,
-    'mse': mse_loss
-}
-
-loss_pairs = {
-    'simple': (loss_dis, loss_gen),
-    'relativistic': (r_loss_dis, r_loss_gen),
-    'relativistic_a': (ra_loss_dis, ra_loss_gen)
-}
+from utils import criteria, loss_pairs
 
 if __name__ == '__main__':
     # args

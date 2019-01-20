@@ -1,24 +1,9 @@
 from tqdm import tqdm
 import torch
 from torch.optim import Adam
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
 
 from networks import Generator, Discriminator
 from writer import Writer
-
-
-def get_loader(path, batch_size):
-    data_set = ImageFolder(path,
-                           transform=transforms.Compose([
-                               transforms.Resize(64),
-                               transforms.CenterCrop(64),
-                               transforms.ToTensor(),
-                               transforms.Lambda(lambda x: 2. * x - 1.)
-                           ]))
-    data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=True)
-    return data_loader
 
 
 class Trainer:

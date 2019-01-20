@@ -2,8 +2,8 @@
 - [x] GAN
 - [x] LSGAN
 - [x] Relativistic GAN
-- [ ] Big GAN
+- [ ] Self-attention GAN
 
 # TODO
 - [ ] FID or Inception score
-
+- [ ] distributed training
