@@ -2,44 +2,39 @@ from tqdm import tqdm
 import torch
 from torch.optim import Adam
 
-from networks.dcgan import Generator, Discriminator
-from writer import Writer, FakeWriter
-from utils import get_loader
-
 
 class Trainer:
     def __init__(self,
+                 generator, discriminator,
+                 train_data, val_data, log_writer,
                  criterion, loss,
-                 data_path, logdir, write_period,
-                 batch_size, noise_size,
-                 cuda):
+                 logdir, write_period,
+                 noise_size, device):
         # nets, optimizers and criterion
-        self.device = torch.device('cuda' if cuda else 'cpu')
-        self.generator = Generator(noise_size)
-        self.discriminator = Discriminator()
+        self.device = device
+        self.generator = generator
+        self.discriminator = discriminator
         self.g_optim = Adam(self.generator.parameters(), 0.0002, (0.5, 0.999))
         self.d_optim = Adam(self.discriminator.parameters(), 0.0002, (0.5, 0.999))
         self.criterion = criterion
         self.loss_dis, self.loss_gen = loss
 
         # constants
-        self.batch_size = batch_size
         self.noise_size = noise_size
         self.logdir = logdir
         self.write_period = write_period
 
         # data and writer
-        self.data_loader = get_loader(data_path, batch_size)
-        self.writer = Writer(logdir, write_period)
+        self.train_data = train_data
+        self.val_data = val_data
+        self.log_writer = log_writer
 
         self.init_print()
 
     def init_print(self):
-        print('Trainer initialized')
-
-        print('    batch_size = {}'.format(self.batch_size))
-        print('    noise_size = {}'.format(self.noise_size))
-        print('    write_period = {}'.format(self.write_period))
+        print('    trainer initialized')
+        print('        noise_size = {}'.format(self.noise_size))
+        print('        write_period = {}'.format(self.write_period))
 
     def save(self, filename):
         torch.save({
@@ -81,7 +76,7 @@ class Trainer:
         self.optimize_gen(loss_generator)
 
         # update statistics
-        self.writer.update_statistics(
+        self.log_writer.update_statistics(
             loss_generator.item(),
             loss_discriminator.item(),
             dis_on_real, dis_on_fake
@@ -90,7 +85,7 @@ class Trainer:
         # write logs
         if step % self.write_period == 0:
             fake_data = self.generate_images(7*7)
-            self.writer.write_logs(
+            self.log_writer.write_logs(
                 0.5 * (real_data[:7*7] + 1.0),
                 0.5 * (fake_data + 1.0)
             )
@@ -99,8 +94,8 @@ class Trainer:
         print('start training for {} epoch'.format(n_epoch))
         for epoch in range(n_epoch):
             for i, (real_data, _) in tqdm(
-                    enumerate(self.data_loader, 0),
-                    total=len(self.data_loader),
+                    enumerate(self.train_data, 0),
+                    total=len(self.train_data),
                     desc='epoch_{}'.format(epoch),
                     ncols=80
             ):  # sad smile

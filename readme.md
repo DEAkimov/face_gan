@@ -11,5 +11,13 @@ BigGAN:
 
 # TODO
 - [ ] organize parameters and experiments for SAGAN
-- [ ] FID or Inception score
-- [ ] distributed training
+- [x] Inception Score is unacceptable because it designed for conditional gan, which is not our case 
+- [ ] FID
+
+# TODO for today:
+- [x] MASSIVE refactor
+- [x] split celeba into train and val data
+- [ ] load pre-trained inception
+- [ ] pre-pooling layer from inception
+- [ ] write FID algorithm
+- [ ] develop a schedule for measure FID
