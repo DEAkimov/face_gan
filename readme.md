@@ -3,7 +3,11 @@
 - [x] LSGAN
 - [x] Relativistic GAN
 - [x] Self-attention GAN
-- [ ] may be some hacks from BigGAN
+
+BigGAN:
+- [ ] Hierarchical latent space
+- [ ] double channels number
+- [ ] orthogonal regularization
 
 # TODO
 - [ ] organize parameters and experiments for SAGAN

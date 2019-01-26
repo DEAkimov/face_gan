@@ -2,9 +2,12 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
+from torch.nn.functional import binary_cross_entropy_with_logits, mse_loss
 
 from loss_functions import loss_dis, loss_gen, r_loss_dis, r_loss_gen, ra_loss_dis, ra_loss_gen
-from torch.nn.functional import binary_cross_entropy_with_logits, mse_loss
+from networks.dcgan import Generator as DCGenerator, Discriminator as DCDiscriminator
+from networks.sagan import Generator as SAGenerator, Discriminator as SADiscriminator
+from networks.biggan import Generator as BigGenerator, Discriminator as BigDiscriminator
 
 criteria = {
     'bce': binary_cross_entropy_with_logits,
@@ -15,6 +18,12 @@ loss_pairs = {
     'simple': (loss_dis, loss_gen),
     'relativistic': (r_loss_dis, r_loss_gen),
     'relativistic_a': (ra_loss_dis, ra_loss_gen)
+}
+
+networks = {
+    'dc': (DCGenerator, DCDiscriminator),
+    'sa': (SAGenerator, SADiscriminator),
+    'big': (BigGenerator, BigDiscriminator)
 }
 
 
