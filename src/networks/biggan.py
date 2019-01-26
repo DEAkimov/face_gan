@@ -2,7 +2,7 @@
 # but BigGAN-like architecture with
 # self-attention, same block structure,
 # hierarchical latent space,
-# but without any conditioning
+# but without any conditioning (which is sad)
 
 
 import torch.nn as nn
