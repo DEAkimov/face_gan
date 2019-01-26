@@ -40,9 +40,17 @@ class Block(nn.Module):
         return output_features + input_features
 
 
-class Generator:
-    pass
+class Generator(nn.Module):
+    def __init__(self):
+        super(Generator, self).__init__()
+
+    def forward(self, input_noise):
+        pass
 
 
-class Discriminator:
-    pass
+class Discriminator(nn.Module):
+    def __init__(self):
+        super(Discriminator, self).__init__()
+
+    def forward(self, image):
+        pass
