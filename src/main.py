@@ -37,7 +37,7 @@ if __name__ == '__main__':
                         help='number of training epoch, default=5')
     args, remaining = parser.parse_known_args()
 
-    # training
+    # some prints
     print('----------- Training script -----------')
     print('experiment settings:')
     print('    loss: {}'.format(args.loss))
@@ -45,6 +45,8 @@ if __name__ == '__main__':
     print('    data_path: {}'.format(args.data_path))
     print('    logdir: {}'.format(args.logdir))
     print('initializations...')
+
+    # initialize all necessary objects
     cuda = torch.cuda.is_available()
     device = torch.device('cuda' if cuda else 'cpu')
     generator, discriminator = get_networks(args.architecture, args.noise_size, device)
@@ -57,8 +59,9 @@ if __name__ == '__main__':
         args.batch_size, args.img_size,
         args.num_workers)
     writer = Writer(args.logdir, args.write_period)
-    fid_mngr = FIDManager()
+    fid_manager = FIDManager()  # TODO
 
+    # initialize trainer
     trainer = Trainer(
         generator, discriminator,
         train_data, val_data, writer,
@@ -68,4 +71,5 @@ if __name__ == '__main__':
         device
     )
     print('done')
+    # training
     trainer.train(args.n_epoch)

@@ -17,7 +17,13 @@ BigGAN:
 # TODO for today:
 - [x] MASSIVE refactor
 - [x] split celeba into train and val data
-- [ ] load pre-trained inception
-- [ ] pre-pooling layer from inception
-- [ ] write FID algorithm
+- [x] load pre-trained inception
+- [x] pre-pooling layer from inception
+- [x] write FID algorithm and manager
 - [ ] develop a schedule for measure FID
+
+# TODO for tomorrow
+- [ ] check if FID calculates correctly
+- [ ] scheduler from yesterday
+- [ ] finish BigGAN architecture
+- [ ] run some experiments

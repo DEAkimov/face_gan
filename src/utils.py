@@ -28,13 +28,17 @@ networks = {
 
 
 def get_loader(path, train, batch_size, image_size, num_workers):
+    # I believe there is no need of special transform
+    # for Inception network: it will be done automatically
+    # when .forward() called.
+    # The only necessary transform [-1, 1] -> [0, 1]
+    # moved to the Inception directly
     data_set = ImageFolder(path,
                            transform=transforms.Compose([
                                transforms.Resize(image_size),
                                transforms.CenterCrop(image_size),
                                transforms.ToTensor(),
-                               transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                    std=[0.229, 0.224, 0.225])
+                               transforms.Lambda(lambda x: 2. * x - 1.)
                            ]))
     data_loader = DataLoader(data_set,
                              batch_size=batch_size,
@@ -53,6 +57,7 @@ def get_loader(path, train, batch_size, image_size, num_workers):
 def get_networks(nets_type, noise_size, device):
     def count_params(net):
         return sum(p.numel() for p in net.parameters())
+
     gen, dis = networks[nets_type]
     gen, dis = gen(noise_size), dis()
     gen = DataParallel(gen.to(device))
