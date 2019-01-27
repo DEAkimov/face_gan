@@ -17,7 +17,7 @@ class SelfAttention(nn.Module):
         key = self.k_projector(x).view(batch, channels // 8, height * width)
         query = self.q_projector(x).view(batch, channels // 8, height * width)
         value = self.v_projector(x).view(batch, channels, height * width)
-        attn_logits = torch.matmul(key.permute(0, 2, 1), query)
+        attn_logits = torch.bmm(key.permute(0, 2, 1), query)
         attn_weights = torch.softmax(attn_logits, dim=1)  # softmax over N dimension in key tensor
-        context = torch.matmul(value, attn_weights).view(batch, channels, height, width)
+        context = torch.bmm(value, attn_weights).view(batch, channels, height, width)
         return x + self.gamma * context
