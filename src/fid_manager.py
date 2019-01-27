@@ -37,15 +37,15 @@ class FIDManager:
         for real, _ in self.data_loader:
             batch_size = real.size(0)
             real = real.to(self.device)
+            noise = torch.randn(
+                batch_size,
+                self.noise_size,
+                device=self.device
+            )
             with torch.no_grad():
-                noise = torch.randn(
-                    batch_size,
-                    self.noise_size,
-                    device=self.device
-                )
                 fake = self.generator(noise)
-                fake_activations.append(self.inception(fake))
-                real_activations.append(self.inception(real))
+            fake_activations.append(self.inception(fake))
+            real_activations.append(self.inception(real))
         return torch.cat(real_activations), torch.cat(fake_activations)
 
     def __call__(self):

@@ -3,7 +3,6 @@ import torch.nn as nn
 
 
 class SelfAttention(nn.Module):
-    # TODO: check shapes
     def __init__(self, in_channels):
         super(SelfAttention, self).__init__()
         sn = nn.utils.spectral_norm

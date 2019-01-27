@@ -1,3 +1,19 @@
+# GAN for face generation
+Architectures: 
+DCGAN, 
+Self-Attention GAN (unconditioned), 
+BigGAN (unconditioned)
+
+Loss functions: 
+simple(s) GAN, 
+Least Squares (LS) GAN, 
+Relativistic (R) sGAN, 
+RLSGAN, 
+R Average (Ra) sGAN, 
+RaLSGAN
+
+# work in progress
+
 # Plan
 - [x] GAN
 - [x] LSGAN
@@ -12,7 +28,7 @@ BigGAN:
 # TODO
 - [ ] organize parameters and experiments for SAGAN
 - [x] Inception Score is unacceptable because it designed for conditional gan, which is not our case 
-- [ ] FID
+- [x] FID
 
 # TODO for today:
 - [x] MASSIVE refactor
@@ -27,4 +43,4 @@ BigGAN:
 - [ ] TTUR: generator 1e-4, discriminator 4e-4, b0 = 0, b1 = 0.9
 - [x] scheduler from yesterday
 - [ ] finish BigGAN architecture
-- [ ] run some experiments
+- [ ] run some experiments on GPU's

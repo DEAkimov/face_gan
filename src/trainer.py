@@ -16,8 +16,8 @@ class Trainer:
         self.generator = generator
         self.discriminator = discriminator
         self.fid_manager = fid_manager
-        self.g_optim = Adam(self.generator.parameters(), 0.0002, (0.5, 0.999))
-        self.d_optim = Adam(self.discriminator.parameters(), 0.0002, (0.5, 0.999))
+        self.g_optim = Adam(self.generator.parameters(), 1e-4, (0.0, 0.9))
+        self.d_optim = Adam(self.discriminator.parameters(), 4e-4, (0.0, 0.9))
         self.criterion = criterion
         self.loss_dis, self.loss_gen = loss
 
@@ -52,7 +52,8 @@ class Trainer:
 
     def generate_images(self, n_images):
         noise = torch.randn(n_images, self.noise_size)  # z
-        generated_images = self.generator(noise)  # G(z)
+        with torch.no_grad():
+            generated_images = self.generator(noise)  # G(z)
         return generated_images
 
     def optimize_gen(self, loss_generator):
@@ -95,7 +96,7 @@ class Trainer:
         # write fid
         if step % self.fid_period == 0:
             fid = self.fid_manager()
-            self.log_writer.write_fid(fid, )
+            self.log_writer.write_fid(fid)
 
     def train(self, n_epoch):
         print('start training for {} epoch'.format(n_epoch))
@@ -104,7 +105,7 @@ class Trainer:
                     enumerate(self.train_data, 0),
                     total=len(self.train_data),
                     desc='epoch_{}'.format(epoch),
-                    ncols=80
+                    ncols=90
             ):  # sad smile
                 self.train_step(i, real_data)
             self.save(self.logdir + '/checkpoint.pth')
