@@ -8,6 +8,7 @@ sys.path.append(project_dir)
 
 from src.trainer import Trainer
 from src.writer import Writer
+from src.networks.inception import Inception
 from src.fid_manager import FIDManager
 from src.utils import criteria, loss_pairs, get_loader, get_networks
 
@@ -25,6 +26,8 @@ if __name__ == '__main__':
     parser.add_argument("logdir", type=str)
     parser.add_argument("--write_period", type=int, default=5,
                         help='tensorboard write frequency, default=5')
+    parser.add_argument("--fid_period", type=int, default=50,
+                        help='fid calculation period, default=50')
     parser.add_argument("--batch_size", type=int, default=128,
                         help='batch size, default=128')
     parser.add_argument("--img_size", type=int, default=64,
@@ -59,16 +62,17 @@ if __name__ == '__main__':
         args.batch_size, args.img_size,
         args.num_workers)
     writer = Writer(args.logdir, args.write_period)
-    fid_manager = FIDManager()  # TODO
+    inception = Inception().to(device)  # no need of DataParallel here
+    fid_manager = FIDManager(val_data, args.noise_size, generator, inception, device)
 
     # initialize trainer
     trainer = Trainer(
         generator, discriminator,
-        train_data, val_data, writer,
+        train_data, val_data, fid_manager,
         criteria[args.criterion], loss_pairs[args.loss],
-        args.logdir, args.write_period,
-        args.noise_size,
-        device
+        writer, args.logdir,
+        args.write_period, args.fid_period,
+        args.noise_size, device
     )
     print('done')
     # training

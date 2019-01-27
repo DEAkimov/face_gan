@@ -1,7 +1,9 @@
 import torch
+import numpy as np
+from scipy import linalg
 
 
-class FDManager:
+class FIDManager:
     def __init__(self,
                  data_loader, noise_size,
                  generator, inception, device):
@@ -13,10 +15,10 @@ class FDManager:
 
     @staticmethod
     def statistics_from_activations(activations):
-        mean = activations.mean(0)
-        activations_n = activations - mean
-        cov = (activations_n.t() @ activations_n) / (activations.size(0) - 1)
-        return mean, cov
+        activations = activations.cpu().numpy()
+        mu = np.mean(activations, axis=0)
+        sigma = np.cov(activations, rowvar=False)
+        return mu, sigma
 
     @staticmethod
     def frechet_distance(mu1, sigma1, mu2, sigma2):
@@ -24,17 +26,17 @@ class FDManager:
         # sigma1, sigma2 - covariation matrices of the same variables
         # frechet_distance = ||mu_1 - mu_2||^2 + Tr(sigma1 + sigma2 - 2*sqrt(sigma1*sigma2))
         diff = mu1 - mu2
-        mul = sigma1 @ sigma2
-        mul[mul < 0] = 0.0  # sqrt return nan if there is values less than 0
-        mul = torch.sqrt(mul)
-        fd = torch.dot(diff, diff) + torch.trace(sigma1 + sigma2 - 2 * mul)
-        return fd
+        cov, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
+        cov = cov.real
+        fid = diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * np.trace(cov)
+        return fid
 
     def get_activations(self):
         real_activations = []
         fake_activations = []
-        for real in self.data_loader:
+        for real, _ in self.data_loader:
             batch_size = real.size(0)
+            real = real.to(self.device)
             with torch.no_grad():
                 noise = torch.randn(
                     batch_size,

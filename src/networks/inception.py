@@ -26,6 +26,12 @@ class Inception(nn.Module):
             # inception.Mixed_7a, inception.Mixed_7b, inception.Mixed_7c,
             nn.AdaptiveAvgPool2d(output_size=(1, 1))
         )
+        self.net.eval()
+        self.init_print()
+
+    def init_print(self):
+        num_params = sum(p.numel() for p in self.net.parameters())
+        print('    inception initialized, #params = {}'.format(num_params))
 
     def forward(self, image):
         # as mentioned in the src.utils.get_loader,

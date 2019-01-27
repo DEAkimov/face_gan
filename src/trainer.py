@@ -6,14 +6,16 @@ from torch.optim import Adam
 class Trainer:
     def __init__(self,
                  generator, discriminator,
-                 train_data, val_data, log_writer,
+                 train_data, val_data, fid_manager,
                  criterion, loss,
-                 logdir, write_period,
+                 log_writer, logdir,
+                 write_period, fid_period,
                  noise_size, device):
         # nets, optimizers and criterion
         self.device = device
         self.generator = generator
         self.discriminator = discriminator
+        self.fid_manager = fid_manager
         self.g_optim = Adam(self.generator.parameters(), 0.0002, (0.5, 0.999))
         self.d_optim = Adam(self.discriminator.parameters(), 0.0002, (0.5, 0.999))
         self.criterion = criterion
@@ -23,6 +25,7 @@ class Trainer:
         self.noise_size = noise_size
         self.logdir = logdir
         self.write_period = write_period
+        self.fid_period = fid_period
 
         # data and writer
         self.train_data = train_data
@@ -87,8 +90,12 @@ class Trainer:
             fake_data = self.generate_images(7*7)
             self.log_writer.write_logs(
                 0.5 * (real_data[:7*7] + 1.0),
-                0.5 * (fake_data + 1.0)
+                0.5 * (fake_data + 1.0),
             )
+        # write fid
+        if step % self.fid_period == 0:
+            fid = self.fid_manager()
+            self.log_writer.write_fid(fid, )
 
     def train(self, n_epoch):
         print('start training for {} epoch'.format(n_epoch))

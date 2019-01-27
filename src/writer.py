@@ -8,7 +8,8 @@ class Writer:
         self.writer = SummaryWriter(logdir)
 
         # statistics
-        self.iterations_done = 0
+        self.writes_done = 0
+        self.fids_done = 0
         self.loss_gen = 0.0
         self.loss_dis = 0.0
         self.p_real = 0.0
@@ -17,11 +18,11 @@ class Writer:
     def _write_scalar(self, tag, scalar):
         self.writer.add_scalar(tag,
                                scalar / self.write_period,
-                               self.iterations_done)
+                               self.writes_done)
 
     def _plot_images(self, real_data, fake_data):
-        self.writer.add_image('real', make_grid(real_data, nrow=7), self.iterations_done)
-        self.writer.add_image('fake', make_grid(fake_data, nrow=7), self.iterations_done)
+        self.writer.add_image('real', make_grid(real_data, nrow=7), self.writes_done)
+        self.writer.add_image('fake', make_grid(fake_data, nrow=7), self.writes_done)
 
     def update_statistics(self, loss_gen, loss_dis, p_real, p_fake):
         self.loss_gen += loss_gen
@@ -42,15 +43,8 @@ class Writer:
         self.p_fake = 0.0
         # plot images and update iterations
         self._plot_images(real_data, fake_data)
-        self.iterations_done += 1
+        self.writes_done += 1
 
-
-class FakeWriter:
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def update_statistics(self, *args, **kwargs):
-        pass
-
-    def write_logs(self, *args, **kwargs):
-        pass
+    def write_fid(self, fid):
+        self.writer.add_scalar('fid', fid, self.fids_done)
+        self.fids_done += 1

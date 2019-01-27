@@ -20,10 +20,11 @@ BigGAN:
 - [x] load pre-trained inception
 - [x] pre-pooling layer from inception
 - [x] write FID algorithm and manager
-- [ ] develop a schedule for measure FID
+- [x] develop a schedule for measure FID
 
 # TODO for tomorrow
-- [ ] check if FID calculates correctly
-- [ ] scheduler from yesterday
+- [x] check if FID calculates correctly
+- [ ] TTUR: generator 1e-4, discriminator 4e-4, b0 = 0, b1 = 0.9
+- [x] scheduler from yesterday
 - [ ] finish BigGAN architecture
 - [ ] run some experiments
