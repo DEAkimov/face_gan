@@ -44,8 +44,8 @@ class FIDManager:
             )
             with torch.no_grad():
                 fake = self.generator(noise)
-            fake_activations.append(self.inception(fake))
-            real_activations.append(self.inception(real))
+                fake_activations.append(self.inception(fake))
+                real_activations.append(self.inception(real))
         return torch.cat(real_activations), torch.cat(fake_activations)
 
     def __call__(self):
