@@ -51,7 +51,7 @@ class Trainer:
         self.discriminator.load_state_dict(checkpoint['discriminator'])
 
     def generate_images(self, n_images):
-        noise = torch.randn(n_images, self.noise_size)  # z
+        noise = torch.randn(n_images, self.noise_size, device=self.device)  # z
         with torch.no_grad():
             generated_images = self.generator(noise)  # G(z)
         return generated_images

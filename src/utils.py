@@ -59,9 +59,10 @@ def get_networks(nets_type, noise_size, device):
         return sum(p.numel() for p in net.parameters())
 
     gen, dis = networks[nets_type]
-    gen, dis = gen(noise_size), dis()
-    gen = DataParallel(gen.to(device))
-    dis = DataParallel(dis.to(device))
+    gen, dis = gen(noise_size).to(device), dis().to(device)
+    # TODO: DataParallel requires device_ids
+    # gen = DataParallel(gen)
+    # dis = DataParallel(dis)
     print(
         '    networks initialized, '
         '#params(gen) = {}, '

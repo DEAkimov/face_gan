@@ -22,7 +22,7 @@ def loss_dis(criterion, generator, discriminator,
     loss_d_real = criterion(dis_on_real, real_labels)
 
     # discriminator on fake
-    noise = torch.randn(batch_size, noise_size)  # z
+    noise = torch.randn(batch_size, noise_size, device=device)  # z
     with torch.no_grad():
         fake_data = generator(noise)  # G(z)
     dis_on_fake = discriminator(fake_data)  # D(G(z))
@@ -39,7 +39,7 @@ def loss_gen(criterion, generator, discriminator,
              noise_size, real_data, device):
     batch_size = real_data.size(0)
     # generator
-    noise = torch.randn(batch_size, noise_size)  # z
+    noise = torch.randn(batch_size, noise_size, device=device)  # z
     gen_data = generator(noise)  # G(z)
     dis_on_gen = discriminator(gen_data)  # D(G(z))
     gen_labels = torch.full((batch_size,), 1, device=device)
@@ -51,7 +51,7 @@ def loss_gen(criterion, generator, discriminator,
 def r_loss_dis(criterion, generator, discriminator,
                noise_size, real_data, device):
     batch_size = real_data.size(0)
-    noise = torch.randn(batch_size, noise_size)  # z
+    noise = torch.randn(batch_size, noise_size, device=device)  # z
     with torch.no_grad():
         fake_data = generator(noise)  # G(z)
     dis_on_real = discriminator(real_data)  # C(real)
@@ -67,7 +67,7 @@ def r_loss_dis(criterion, generator, discriminator,
 def r_loss_gen(criterion, generator, discriminator,
                noise_size, real_data, device):
     batch_size = real_data.size(0)
-    noise = torch.randn(batch_size, noise_size)  # z
+    noise = torch.randn(batch_size, noise_size, device=device)  # z
     gen_data = generator(noise)  # G(z)
     dis_on_real = discriminator(real_data)  # C(real)
     dis_on_gen = discriminator(gen_data)  # C(gen)
@@ -81,7 +81,7 @@ def r_loss_gen(criterion, generator, discriminator,
 def ra_loss_dis(criterion, generator, discriminator,
                 noise_size, real_data, device):
     batch_size = real_data.size(0)
-    noise = torch.randn(batch_size, noise_size)  # z
+    noise = torch.randn(batch_size, noise_size, device=device)  # z
     with torch.no_grad():
         fake_data = generator(noise)  # G(z)
     dis_on_real = discriminator(real_data)  # C(real)
@@ -102,7 +102,7 @@ def ra_loss_dis(criterion, generator, discriminator,
 def ra_loss_gen(criterion, generator, discriminator,
                 noise_size, real_data, device):
     batch_size = real_data.size(0)
-    noise = torch.randn(batch_size, noise_size)  # z
+    noise = torch.randn(batch_size, noise_size, device=device)  # z
     gen_data = generator(noise)  # G(z)
 
     dis_on_real = discriminator(real_data)  # C(real)
