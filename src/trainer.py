@@ -107,6 +107,6 @@ class Trainer:
                     desc='epoch_{}'.format(epoch),
                     ncols=90
             ):  # sad smile
-                self.train_step(i, real_data)
+                self.train_step(i, real_data.to(self.device))
             self.save(self.logdir + '/checkpoint.pth')
         print('training done')
