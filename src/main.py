@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument("architecture", type=str,
                         help="networks architecture, one from {\'dc\', \'sa\', \'big\'}")
     parser.add_argument("criterion", type=str,
-                        help="criterion type, one from {\'bce\', \'mse\'}")
+                        help="criterion type, one from {\'bce\', \'mse\', \'hinge\'}")
     parser.add_argument("loss", type=str,
                         help="loss type, one from {\'simple\', \'relativistic\', 'relativistic_a'}")
     parser.add_argument("data_path", type=str)

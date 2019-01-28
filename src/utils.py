@@ -1,3 +1,4 @@
+import torch
 from torch.nn.parallel import DataParallel
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -9,9 +10,18 @@ from src.networks.dcgan import Generator as DCGenerator, Discriminator as DCDisc
 from src.networks.sagan import Generator as SAGenerator, Discriminator as SADiscriminator
 from src.networks.biggan import Generator as BigGenerator, Discriminator as BigDiscriminator
 
+
+def hinge_loss(prediction, labels):
+    # custom realization of hinge loss, support labels {0, 1}
+    loss = 1.0 - (2.0 * labels - 1.0) * prediction
+    loss = torch.max(torch.zeros_like(loss), loss)
+    return loss
+
+
 criteria = {
     'bce': binary_cross_entropy_with_logits,
-    'mse': mse_loss
+    'mse': mse_loss,
+    'hinge': hinge_loss
 }
 
 loss_pairs = {
