@@ -9,6 +9,9 @@ simple GAN, Relativistic, Relativistic average
 
 Criterions: Binary Cross Entropy (bce), Least Squares (LS), Hinge (H)
 
+Conventionally, Hinge GAN optimize hinge loss only for discriminator. 
+However, in this implementation, it optimizes hinge loss for generator too.
+
 # work in progress
 
 # Plan

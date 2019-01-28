@@ -1,5 +1,5 @@
 #!/bin/bash
-
+export CUDA_VISIBLE_DEVICES=1; \
 python3 src/main.py \
---architecture dc --criterion mse --loss relativistic_a \
---data_path resources/celeba --logdir logs/dc_gan/exp_5/
+--architecture dc --criterion hinge --loss relativistic \
+--data_path resources/celeba --logdir logs/dc_gan/h_r/
