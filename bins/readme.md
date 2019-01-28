@@ -5,11 +5,11 @@ All experiments conducted on celeba faces, downloaded from
 
 Baseline model (DCGAN, exp_0 - exp_5) trained to generate 64×64 images, 
 
-- [ ] exp_0: base experiment with all default parameters. 
+- [x] exp_0: base experiment with all default parameters. 
 criterion = bce, loss = simple, logdir = exp_0
-- [ ] exp_1: change criterion to mse
-- [ ] exp_2: criterion = bce, loss = relativistic
-- [ ] exp_3: criterion = mse, loss = relativistic
+- [x] exp_1: change criterion to mse
+- [x] exp_2: criterion = bce, loss = relativistic
+- [x] exp_3: criterion = mse, loss = relativistic
 - [ ] exp_4: criterion = bce, loss = relativistic_a
 - [ ] exp_5: criterion = mse, loss = relativistic_a
 

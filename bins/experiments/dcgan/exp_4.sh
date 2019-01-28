@@ -1,6 +1,5 @@
 #!/bin/bash
 
 python3 src/main.py \
---criterion bce --loss relativistic_a \
---data_path resources/celeba \
---logdir logs/exp_4/
+--architecture dc --criterion bce --loss relativistic_a \
+--data_path resources/celeba --logdir logs/dc_gan/exp_4/
