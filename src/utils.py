@@ -14,7 +14,7 @@ from src.networks.biggan import Generator as BigGenerator, Discriminator as BigD
 def hinge_loss(prediction, labels):
     # custom realization of hinge loss, support labels {0, 1}
     loss = 1.0 - (2.0 * labels - 1.0) * prediction
-    loss = torch.max(torch.zeros_like(loss), loss)
+    loss = torch.max(torch.zeros_like(loss), loss).mean()
     return loss
 
 
