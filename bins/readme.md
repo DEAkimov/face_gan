@@ -17,15 +17,20 @@ criterion = bce, loss = simple, logdir = b_s
 - [x] exp_7: criterion = mse, loss = relativistic_a, logdir = m_ra
 - [x] exp_8: criterion = hinge, loss = relativistic_a, logdir = h_ra
 
-checkpoint and logs will be posted soon
+checkpoint, logs and screenshots of the final results will be posted soon
 
 ### SAGAN
 exp_9 - exp_17, trained to generate 128x128 images
 
-- [ ] exp_9: base exp; 10 epochs, criterion = bce, loss = simple, logdir = b_s
-- [ ] exp_10: mse, simple
-- [ ] exp_11: hinge, simple
-- [ ] exp_12: bce, relativistic
+- [x] exp_9: base exp; 10 epochs, criterion = bce, loss = simple, logdir = b_s
+- [x] exp_10: mse, simple
+- [x] exp_11: hinge, simple
+- [x] exp_12: bce, relativistic
+- [ ] exp_13: mse, relativistic
+- [ ] exp_14: hinge, relativistic
+- [ ] exp_15: bse, relativistic_a
+- [ ] exp_16: mse, relativistic_a
+- [ ] exp_17: hinge, relativistic_a
 
 ### BigGAN
 exp_18 - exp_26, trained to generate 256×256 images
