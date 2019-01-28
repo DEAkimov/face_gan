@@ -81,3 +81,11 @@ def get_networks(nets_type, noise_size, device):
         )
     )
     return gen, dis
+
+
+def moving_average(model_old, model_new, alpha):
+    for param_old, param_new in zip(
+            model_old.parameters(),
+            model_new.parameters()
+    ):  # sad smile again!
+        param_old.data = alpha * param_old.data + (1.0 - alpha) * param_new.data

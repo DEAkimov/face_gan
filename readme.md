@@ -20,13 +20,12 @@ However, in this implementation, it optimizes hinge loss for generator too.
 - [x] Hinge loss
 - [x] Relativistic GAN
 - [x] Self-attention GAN
-
-SAGAN:
-- [x] implement self-attention layer
-- [x] implement architecture
-- [ ] debug
+- [ ] Big GAN
 
 BigGAN:
-- [ ] Hierarchical latent space
-- [ ] double channels number
+- [x] Hierarchical latent space
+- [x] double channels number
+- [ ] Architecture
 - [ ] orthogonal regularization
+- [ ] Moving average of weights for better testing generation
+- [ ] DataParallel for training with adequate batch size
