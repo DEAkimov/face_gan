@@ -22,5 +22,10 @@ checkpoint and logs will be posted soon
 ### SAGAN
 exp_9 - exp_17, trained to generate 128x128 images
 
+- [ ] exp_9: base exp; 10 epochs, criterion = bce, loss = simple, logdir = b_s
+- [ ] exp_10: mse, simple
+- [ ] exp_11: hinge, simple
+- [ ] exp_12: bce, relativistic
+
 ### BigGAN
 exp_18 - exp_26, trained to generate 256×256 images

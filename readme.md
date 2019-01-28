@@ -23,7 +23,7 @@ However, in this implementation, it optimizes hinge loss for generator too.
 
 SAGAN:
 - [x] implement self-attention layer
-- [ ] implement architecture
+- [x] implement architecture
 - [ ] debug
 
 BigGAN:
