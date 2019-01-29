@@ -26,11 +26,13 @@ exp_9 - exp_17, trained to generate 128x128 images
 - [x] exp_10: mse, simple
 - [x] exp_11: hinge, simple
 - [x] exp_12: bce, relativistic
-- [ ] exp_13: mse, relativistic
-- [ ] exp_14: hinge, relativistic
-- [ ] exp_15: bse, relativistic_a
-- [ ] exp_16: mse, relativistic_a
-- [ ] exp_17: hinge, relativistic_a
+- [x] exp_13: mse, relativistic
+- [x] exp_14: hinge, relativistic
+- [x] exp_15: bse, relativistic_a
+- [x] exp_16: mse, relativistic_a
+- [x] exp_17: hinge, relativistic_a
 
 ### BigGAN
-exp_18 - exp_26, trained to generate 256×256 images
+exp_18 - exp_26, trained to generate 256×256 images.
+My model is unconditional, so I decide to not double networks size (channel multiplier = 64)
+

@@ -15,7 +15,7 @@ from src.networks.self_attention import SelfAttention
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
-        self.ch = ch = 96
+        self.ch = ch = 64
         self.linear = sn(nn.Linear(20, 4 * 4 * 16 * ch))
         self.blocks = nn.ModuleList([
             BlockUp(16 * ch, 16 * ch, 20),
@@ -47,7 +47,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        ch = 96
+        ch = 64
         self.conv = nn.Sequential(
             BlockDown(3, 1 * ch),
             BlockDown(1 * ch, 2 * ch),

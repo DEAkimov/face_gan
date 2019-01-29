@@ -89,3 +89,18 @@ def moving_average(model_old, model_new, alpha):
             model_new.parameters()
     ):  # sad smile again!
         param_old.data = alpha * param_old.data + (1.0 - alpha) * param_new.data
+
+
+def truncated_normal(
+        n_samples, noise_size, device,
+        threshold=1.0):
+    samples = torch.randn(n_samples, noise_size, device=device)
+    smaller = samples < - threshold
+    bigger = samples > threshold
+    while smaller.sum() != 0 or bigger.sum() != 0:
+        new_samples = torch.randn(n_samples, noise_size, device=device)
+        samples[smaller] = new_samples[smaller]
+        samples[bigger] = new_samples[bigger]
+        smaller = samples < - threshold
+        bigger = samples > threshold
+    return samples
