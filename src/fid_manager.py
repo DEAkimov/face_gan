@@ -49,6 +49,7 @@ class FIDManager:
         return torch.cat(real_activations), torch.cat(fake_activations)
 
     def __call__(self):
+        self.generator.eval()
         real_activations, fake_activations = self.get_activations()
         mu1, sigma1 = self.statistics_from_activations(real_activations)
         mu2, sigma2 = self.statistics_from_activations(fake_activations)

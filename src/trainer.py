@@ -2,10 +2,12 @@ from tqdm import tqdm
 import torch
 from torch.optim import Adam
 
+from src.utils import truncated_normal, moving_average, orthogonal_regularization
+
 
 class Trainer:
     def __init__(self,
-                 generator, discriminator,
+                 generator, discriminator, ma_generator,
                  train_data, val_data, fid_manager,
                  criterion, loss,
                  log_writer, logdir,
@@ -15,22 +17,30 @@ class Trainer:
         self.device = device
         self.generator = generator
         self.discriminator = discriminator
+        self.ma_generator = ma_generator
         self.fid_manager = fid_manager
-        self.g_optim = Adam(self.generator.parameters(), 1e-4, (0.0, 0.9))
-        self.d_optim = Adam(self.discriminator.parameters(), 4e-4, (0.0, 0.9))
+        # =============== parameters for DCGAN and SAGAN ===============
+        # lr_g, lr_d = 4e-4, 1e-4
+        # beta1, beta2 = 0.0, 0.9
+        # =============== parameters for BigGAN ===============
+        lr_g, lr_d = 5e-5, 2e-4
+        beta1, beta2 = 0.0, 0.999
+        self.g_optim = Adam(self.generator.parameters(), lr_g, (beta1, beta2))
+        self.d_optim = Adam(self.discriminator.parameters(), lr_d, (beta1, beta2))
         self.criterion = criterion
         self.loss_dis, self.loss_gen = loss
+
+        # data and writer
+        self.train_data = train_data
+        self.val_data = val_data
+        self.log_writer = log_writer
 
         # constants
         self.noise_size = noise_size
         self.logdir = logdir
         self.write_period = write_period
         self.fid_period = fid_period
-
-        # data and writer
-        self.train_data = train_data
-        self.val_data = val_data
-        self.log_writer = log_writer
+        self.half_bs = self.train_data.batch_size // 2
 
         self.init_print()
 
@@ -51,9 +61,15 @@ class Trainer:
         self.discriminator.load_state_dict(checkpoint['discriminator'])
 
     def generate_images(self, n_images):
-        noise = torch.randn(n_images, self.noise_size, device=self.device)  # z
+        # self.generator.eval()
+        self.ma_generator.eval()
+        # truncated normal noise special for BigGAN
+        noise = truncated_normal(n_images, self.noise_size, device=self.device)  # z
+        # noise = torch.randn(n_images, self.noise_size, device=self.device)
         with torch.no_grad():
-            generated_images = self.generator(noise)  # G(z)
+            # generated_images = self.generator(noise)  # G(z)
+            # generate samples from moving_average model
+            generated_images = self.ma_generator(noise)  # G(z)
         return generated_images
 
     def optimize_gen(self, loss_generator):
@@ -73,24 +89,39 @@ class Trainer:
         )
 
     def train_step(self, step, real_data):
+        self.generator.train()
+        self.discriminator.train()
         # compute and optimize losses
-        loss_discriminator, dis_on_real, dis_on_fake = self.call_loss(self.loss_dis, real_data)
-        self.optimize_dis(loss_discriminator)
-        loss_generator = self.call_loss(self.loss_gen, real_data)
-        self.optimize_gen(loss_generator)
+        # s stands for 'statistic'
+        s_loss_discriminator, s_dis_on_real, s_dis_on_fake = 0.0, 0.0, 0.0
+        # ultra-ugly way to make 2 discriminator updates per 1 generator update
+        for _ in range(2):
+            loss_discriminator, dis_on_real, dis_on_fake = self.call_loss(
+                self.loss_dis, real_data[_ * self.half_bs:(_ + 1) * self.half_bs]
+            )
+            self.optimize_dis(loss_discriminator)
+            s_loss_discriminator += 0.5 * loss_discriminator.item()
+            s_dis_on_real += 0.5 * dis_on_real
+            s_dis_on_fake += 0.5 * dis_on_fake
+        loss_generator = self.call_loss(self.loss_gen, real_data[:self.half_bs])
+        penalty = orthogonal_regularization(self.generator, self.device)
+        self.optimize_gen(loss_generator + 1e-4 * penalty)
+
+        # update moving average generator
+        moving_average(self.ma_generator, self.generator)
 
         # update statistics
         self.log_writer.update_statistics(
             loss_generator.item(),
-            loss_discriminator.item(),
-            dis_on_real, dis_on_fake
+            s_loss_discriminator,
+            s_dis_on_real, s_dis_on_fake
         )
 
         # write logs
         if step % self.write_period == 0:
-            fake_data = self.generate_images(7*7)
+            fake_data = self.generate_images(7 * 7)
             self.log_writer.write_logs(
-                0.5 * (real_data[:7*7] + 1.0),
+                0.5 * (real_data[:7 * 7] + 1.0),
                 0.5 * (fake_data + 1.0),
             )
         # write fid

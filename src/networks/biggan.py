@@ -8,7 +8,7 @@
 import torch.nn as nn
 from torch.nn.utils import spectral_norm as sn
 
-from src.networks.big_layers import BlockUp, BlockDown, Block, SumPooling
+from src.networks.big_layers import BlockUp, BlockDown, Block
 from src.networks.self_attention import SelfAttention
 
 
@@ -59,7 +59,8 @@ class Discriminator(nn.Module):
             Block(16 * ch),
         )
         self.final_layers = nn.Sequential(
-            nn.ReLU(), SumPooling(),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d(output_size=(1, 1)),
             sn(nn.Linear(ch * 16, 1))
         )
 
@@ -76,7 +77,9 @@ if __name__ == '__main__':
         return sum(p.numel() for p in net.parameters())
     inp = torch.randn(1, 128)
     gen, dis = Generator(), Discriminator()
-    print(count_params(gen), count_params(dis))  # (52, 51)M, (116, 115)M
-    generated = gen(inp)
-    discriminated = dis(generated)
-    print(discriminated.size())
+    optim = torch.optim.Adam(gen.parameters(), 1e-3)
+
+    # print(count_params(gen), count_params(dis))  # (52, 51)M, (116, 115)M
+    # generated = gen(inp)
+    # discriminated = dis(generated)
+    # print(discriminated.size())

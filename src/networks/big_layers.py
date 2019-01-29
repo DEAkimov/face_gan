@@ -67,11 +67,3 @@ class Block(nn.Module):
         output_features = self.conv2(output_features)
         output_features = self.bn2(output_features)
         return input_features + output_features
-
-
-class SumPooling(nn.Module):
-    def __init__(self):
-        super(SumPooling, self).__init__()
-
-    def forward(self, input_features):
-        return input_features.sum(-1).sum(-1)

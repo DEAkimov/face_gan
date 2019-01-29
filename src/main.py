@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import torch
+from copy import deepcopy
 
 project_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 sys.path.append(project_dir)
@@ -29,7 +30,7 @@ if __name__ == '__main__':
     parser.add_argument("--fid_period", type=int, default=50,
                         help='fid calculation period, default=50')
     parser.add_argument("--batch_size", type=int, default=128,
-                        help='batch size, default=128')
+                        help='DOUBLE batch size, default=128')
     parser.add_argument("--img_size", type=int, default=64,
                         help='image size, MUST be 64 or 128, default=64')
     parser.add_argument("--noise_size", type=int, default=128,
@@ -53,8 +54,9 @@ if __name__ == '__main__':
     cuda = torch.cuda.is_available()
     device = torch.device('cuda' if cuda else 'cpu')
     generator, discriminator = get_networks(args.architecture, args.noise_size, device)
+    ma_generator = deepcopy(generator)  # moving average
     train_data = get_loader(
-        args.data_path, True,
+        args.data_path + '/train', True,
         args.batch_size, args.img_size,
         args.num_workers)
     val_data = get_loader(
@@ -63,11 +65,13 @@ if __name__ == '__main__':
         args.num_workers)
     writer = Writer(args.logdir, args.write_period)
     inception = Inception().to(device)  # no need of DataParallel here
-    fid_manager = FIDManager(val_data, args.noise_size, generator, inception, device)
+    # fid_manager = FIDManager(val_data, args.noise_size, generator, inception, device)
+    # measure performance of moving average generator
+    fid_manager = FIDManager(val_data, args.noise_size, ma_generator, inception, device)
 
     # initialize trainer
     trainer = Trainer(
-        generator, discriminator,
+        generator, discriminator, ma_generator,
         train_data, val_data, fid_manager,
         criteria[args.criterion], loss_pairs[args.loss],
         writer, args.logdir,

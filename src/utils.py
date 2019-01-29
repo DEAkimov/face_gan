@@ -70,9 +70,8 @@ def get_networks(nets_type, noise_size, device):
 
     gen, dis = networks[nets_type]
     gen, dis = gen(noise_size).to(device), dis().to(device)
-    # TODO: DataParallel requires device_ids
-    # gen = DataParallel(gen)
-    # dis = DataParallel(dis)
+    gen = DataParallel(gen)
+    dis = DataParallel(dis)
     print(
         '    networks initialized, '
         '#params(gen) = {}, '
@@ -83,7 +82,7 @@ def get_networks(nets_type, noise_size, device):
     return gen, dis
 
 
-def moving_average(model_old, model_new, alpha):
+def moving_average(model_old, model_new, alpha=0.9999):
     for param_old, param_new in zip(
             model_old.parameters(),
             model_new.parameters()
@@ -104,3 +103,15 @@ def truncated_normal(
         smaller = samples < - threshold
         bigger = samples > threshold
     return samples
+
+
+def orthogonal_regularization(model, device):
+    penalty = torch.tensor(0.0, dtype=torch.float32, device=device)
+    for name, param in model.named_parameters():
+        if 'weight' in name and param.requires_grad:
+            shape = param.shape[0]
+            flatten = param.view(shape, -1)
+            beta_squared = torch.mm(flatten, flatten.t())  # W^T.W
+            ones = torch.ones(shape, shape) - torch.eye(shape)  # 1 - I
+            penalty += ((beta_squared * ones) ** 2).sum()  # (||W^T.W x (1 - I)||_F)^2
+    return penalty

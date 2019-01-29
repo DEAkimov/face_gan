@@ -34,5 +34,5 @@ exp_9 - exp_17, trained to generate 128x128 images
 
 ### BigGAN
 exp_18 - exp_26, trained to generate 256×256 images.
-My model is unconditional, so I decide to not double networks size (channel multiplier = 64)
-
+My model is unconditional, so I decide to not double networks size (channel multiplier = 64).
+Only few loss functions will be tested: mse + simple, bce + ra, hinge + ra, mse + ra
