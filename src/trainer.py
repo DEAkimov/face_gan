@@ -119,12 +119,13 @@ class Trainer:
 
         # write logs
         if step % self.write_period == 0:
-            fake_data = self.generate_images(7 * 7)
+            n_images = 3  # 7 for DC and SA GANs, 3 for Big
+            fake_data = self.generate_images(n_images * n_images)
             self.log_writer.write_logs(
-                0.5 * (real_data[:7 * 7] + 1.0),
+                0.5 * (real_data[:n_images * n_images] + 1.0),
                 0.5 * (fake_data + 1.0),
             )
-        # write fid
+        # # write fid
         if step % self.fid_period == 0:
             fid = self.fid_manager()
             self.log_writer.write_fid(fid)

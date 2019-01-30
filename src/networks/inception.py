@@ -40,10 +40,8 @@ class Inception(nn.Module):
         # transform [-1, +1] called just before net here
         image = 0.5 * (image + 1.0)
         net_out = self.net(0.5 * (image + 1.0))
-        # I am ultra-smart guy,
-        # so I know for sure that this output
-        # has shape [batch, 768]
-        return net_out.view(-1, 768)
+        size = 2048  # 768 for DC and SA GANs, 2048 for BigGAN
+        return net_out.view(-1, size)
 
 
 if __name__ == '__main__':

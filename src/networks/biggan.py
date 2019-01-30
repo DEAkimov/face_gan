@@ -8,14 +8,15 @@
 import torch.nn as nn
 from torch.nn.utils import spectral_norm as sn
 
-from src.networks.big_layers import BlockUp, BlockDown, Block
+from src.networks.big_layers import BlockUp, BlockDown, Block, AvgPooling
 from src.networks.self_attention import SelfAttention
 
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, noise_size):
         super(Generator, self).__init__()
-        self.ch = ch = 64
+        self.ch = ch = 4
+        self.noise_size = noise_size
         self.linear = sn(nn.Linear(20, 4 * 4 * 16 * ch))
         self.blocks = nn.ModuleList([
             BlockUp(16 * ch, 16 * ch, 20),
@@ -47,7 +48,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        ch = 64
+        ch = 4
         self.conv = nn.Sequential(
             BlockDown(3, 1 * ch),
             BlockDown(1 * ch, 2 * ch),
@@ -60,7 +61,7 @@ class Discriminator(nn.Module):
         )
         self.final_layers = nn.Sequential(
             nn.ReLU(),
-            nn.AdaptiveAvgPool2d(output_size=(1, 1)),
+            AvgPooling(ch * 16),
             sn(nn.Linear(ch * 16, 1))
         )
 
@@ -76,10 +77,10 @@ if __name__ == '__main__':
     def count_params(net):
         return sum(p.numel() for p in net.parameters())
     inp = torch.randn(1, 128)
-    gen, dis = Generator(), Discriminator()
-    optim = torch.optim.Adam(gen.parameters(), 1e-3)
+    gen, dis = Generator(128), Discriminator()
 
-    # print(count_params(gen), count_params(dis))  # (52, 51)M, (116, 115)M
-    # generated = gen(inp)
-    # discriminated = dis(generated)
-    # print(discriminated.size())
+    print(count_params(gen), count_params(dis))  # (52, 51)M, (116, 115)M
+    with torch.no_grad():
+        generated = gen(inp)
+        discriminated = dis(generated)
+    print(generated.size(), discriminated.size())

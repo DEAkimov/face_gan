@@ -21,8 +21,9 @@ class Writer:
                                self.writes_done)
 
     def _plot_images(self, real_data, fake_data):
-        self.writer.add_image('real', make_grid(real_data, nrow=7), self.writes_done)
-        self.writer.add_image('fake', make_grid(fake_data, nrow=7), self.writes_done)
+        nrow = 3  # 7 for DC and SA GANs, 3 for Big
+        self.writer.add_image('real', make_grid(real_data, nrow=nrow), self.writes_done)
+        self.writer.add_image('fake', make_grid(fake_data, nrow=nrow), self.writes_done)
 
     def update_statistics(self, loss_gen, loss_dis, p_real, p_fake):
         self.loss_gen += loss_gen

@@ -67,3 +67,13 @@ class Block(nn.Module):
         output_features = self.conv2(output_features)
         output_features = self.bn2(output_features)
         return input_features + output_features
+
+
+class AvgPooling(nn.Module):
+    def __init__(self, feature_size):
+        super(AvgPooling, self).__init__()
+        self.pool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.feature_size = feature_size
+
+    def forward(self, input_features):
+        return self.pool(input_features).view(-1, self.feature_size)
