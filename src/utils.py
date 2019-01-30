@@ -106,6 +106,7 @@ def truncated_normal(
 
 
 def orthogonal_regularization(model, device):
+    # (||W^T.W x (1 - I)||_F)^2
     penalty = torch.tensor(0.0, dtype=torch.float32, device=device)
     for name, param in model.named_parameters():
         if 'weight' in name and param.requires_grad:
@@ -113,5 +114,5 @@ def orthogonal_regularization(model, device):
             flatten = param.view(shape, -1)
             beta_squared = torch.mm(flatten, flatten.t())  # W^T.W
             ones = torch.ones(shape, shape) - torch.eye(shape)  # 1 - I
-            penalty += ((beta_squared * ones) ** 2).sum()  # (||W^T.W x (1 - I)||_F)^2
+            penalty += ((beta_squared * ones) ** 2).sum()
     return penalty
