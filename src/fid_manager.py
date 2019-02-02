@@ -1,19 +1,19 @@
 import torch
 import numpy as np
 from scipy import linalg
+from tqdm import tqdm
 
 
 class FIDManager:
     def __init__(self,
                  data_loader, noise_size,
                  generator, inception,
-                 gpu_device, cpu_device):
+                 gpu_device):
         self.data_loader = data_loader
         self.noise_size = noise_size
         self.generator = generator
         self.inception = inception
         self.gpu_device = gpu_device
-        self.cpu_device = cpu_device
 
     @staticmethod
     def statistics_from_activations(activations):
@@ -36,18 +36,19 @@ class FIDManager:
     def get_activations(self):
         real_activations = []
         fake_activations = []
-        for real, _ in self.data_loader:
+        for real, _ in tqdm(self.data_loader):
             batch_size = real.size(0)
-            real = real.to(self.cpu_device)
-            noise = torch.randn(
-                batch_size,
-                self.noise_size,
-                device=self.gpu_device
-            )
+            real = real.to(self.gpu_device)
             with torch.no_grad():
                 real_activations.append(self.inception(real))
-                fake = self.generator(noise)
-                fake_activations.append(self.inception(fake))
+                fake = []
+                for i in range(batch_size):
+                    noise = torch.randn(
+                        1, self.noise_size,
+                        device=self.gpu_device
+                    )
+                    fake.append(self.generator(noise).to(self.gpu_device))
+                fake_activations.append(self.inception(torch.cat(fake)))
         return torch.cat(real_activations), torch.cat(fake_activations)
 
     def __call__(self):

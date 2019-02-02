@@ -64,16 +64,13 @@ class Trainer:
         self.discriminator.load_state_dict(checkpoint['discriminator'])
 
     def generate_images(self, n_images):
-        # self.generator.eval()
-        self.ma_generator.eval()
         # truncated normal noise special for BigGAN
-        noise = truncated_normal(n_images, self.noise_size, device=self.gpu_device)  # z
-        # noise = torch.randn(n_images, self.noise_size, device=self.device)
-        with torch.no_grad():
-            # generated_images = self.generator(noise)  # G(z)
-            # generate samples from moving_average model
-            generated_images = self.ma_generator(noise)  # G(z)
-        return generated_images
+        generated_images = []
+        for i in range(n_images):
+            noise = truncated_normal(1, self.noise_size, device=self.gpu_device)  # z
+            with torch.no_grad():
+                generated_images.append(self.ma_generator(noise))  # G(z)
+        return torch.cat(generated_images)
 
     def call_loss(self, loss, real_data):
         return loss(
@@ -82,7 +79,6 @@ class Trainer:
         )
 
     def train_discriminator(self, real_data):
-        self.discriminator.train()
         self.d_optim.zero_grad()
         loss_discriminator, dis_on_real, dis_on_fake = self.call_loss(self.loss_dis, real_data)
         loss_discriminator.backward()
@@ -90,12 +86,11 @@ class Trainer:
         return loss_discriminator.item(), dis_on_real, dis_on_fake
 
     def train_generator(self, real_data):
-        self.generator.train()
         self.g_optim.zero_grad()
         loss_generator = self.call_loss(self.loss_gen, real_data)
-        if self.orthogonal_penalty:
-            penalty = orthogonal_regularization(self.generator, self.gpu_device)
-            loss_generator = loss_generator + 1e-4 * penalty
+        # if self.orthogonal_penalty:
+        #     penalty = orthogonal_regularization(self.generator, self.gpu_device)
+        #     loss_generator = loss_generator + 1e-4 * penalty
         loss_generator.backward()
         self.g_optim.step()
         return loss_generator.item()
@@ -117,6 +112,7 @@ class Trainer:
         real_data = real_data.to(self.gpu_device)
 
         loss_generator = self.train_generator(real_data)  # train generator once
+        loss_generator = 0.0
 
         # update moving average generator
         moving_average(self.ma_generator, self.generator)
@@ -146,9 +142,13 @@ class Trainer:
 
     def train(self, n_epoch):
         print('start training for {} epoch'.format(n_epoch))
+        self.discriminator.train()
+        self.generator.train()
+        self.ma_generator.eval()
+        step = 0
         for epoch in range(n_epoch):
             data_loader = iter(self.train_data)
-            for step in tqdm(
+            for i in tqdm(
                     range(self.train_data_len // (self.n_discriminator + 1)),
                     desc='epoch_{}'.format(epoch),
                     ncols=90
@@ -158,5 +158,6 @@ class Trainer:
                     self.write_logs()
                 if step % self.fid_period == 0:
                     self.write_fid()
+                step += 1
             self.save(self.logdir + '/checkpoint.pth')
         print('training done')
