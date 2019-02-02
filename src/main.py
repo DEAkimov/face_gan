@@ -52,8 +52,9 @@ if __name__ == '__main__':
 
     # initialize all necessary objects
     cuda = torch.cuda.is_available()
-    device = torch.device('cuda' if cuda else 'cpu')
-    generator, discriminator = get_networks(args.architecture, args.noise_size, device)
+    gpu_device = torch.device('cuda' if cuda else 'cpu')
+    cpu_device = torch.device('cpu')
+    generator, discriminator = get_networks(args.architecture, args.noise_size, gpu_device)
     ma_generator = deepcopy(generator)  # moving average
     train_data = get_loader(
         args.data_path + '/train', True,
@@ -64,7 +65,7 @@ if __name__ == '__main__':
         args.batch_size, args.img_size,
         args.num_workers)
     writer = Writer(args.logdir, args.write_period)
-    inception = Inception().to(device)  # no need of DataParallel here
+    inception = Inception().to(cpu_device)  # no need of DataParallel here
     # fid_manager = FIDManager(val_data, args.noise_size, generator, inception, device)
     # measure performance of moving average generator
     fid_manager = FIDManager(val_data, args.noise_size, ma_generator, inception, device)
@@ -76,7 +77,7 @@ if __name__ == '__main__':
         criteria[args.criterion], loss_pairs[args.loss],
         writer, args.logdir,
         args.write_period, args.fid_period,
-        args.noise_size, device
+        args.noise_size, gpu_device
     )
     print('done')
     # training
