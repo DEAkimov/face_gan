@@ -6,12 +6,14 @@ from scipy import linalg
 class FIDManager:
     def __init__(self,
                  data_loader, noise_size,
-                 generator, inception, device):
+                 generator, inception,
+                 gpu_device, cpu_device):
         self.data_loader = data_loader
         self.noise_size = noise_size
         self.generator = generator
         self.inception = inception
-        self.device = device
+        self.gpu_device = gpu_device
+        self.cpu_device = cpu_device
 
     @staticmethod
     def statistics_from_activations(activations):
@@ -36,11 +38,11 @@ class FIDManager:
         fake_activations = []
         for real, _ in self.data_loader:
             batch_size = real.size(0)
-            real = real.to(self.device)
+            real = real.to(self.cpu_device)
             noise = torch.randn(
                 batch_size,
                 self.noise_size,
-                device=self.device
+                device=self.gpu_device
             )
             with torch.no_grad():
                 real_activations.append(self.inception(real))

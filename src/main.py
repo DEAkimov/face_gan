@@ -15,6 +15,11 @@ from src.utils import criteria, loss_pairs, get_loader, get_networks
 
 
 if __name__ == '__main__':
+    def bool_type(arg):
+        if arg in ['true', 'True']:
+            return True
+        return False
+
     # args
     parser = argparse.ArgumentParser(description='GAN training runner')
     parser.add_argument("architecture", type=str,
@@ -25,6 +30,8 @@ if __name__ == '__main__':
                         help="loss type, one from {\'simple\', \'relativistic\', 'relativistic_a'}")
     parser.add_argument("data_path", type=str)
     parser.add_argument("logdir", type=str)
+    parser.add_argument("--n_discriminator", type=int, default=2,
+                        help='number of discriminator updates per one generator update, default=2')
     parser.add_argument("--write_period", type=int, default=5,
                         help='tensorboard write frequency, default=5')
     parser.add_argument("--fid_period", type=int, default=50,
@@ -35,6 +42,8 @@ if __name__ == '__main__':
                         help='image size, MUST be 64 or 128, default=64')
     parser.add_argument("--noise_size", type=int, default=128,
                         help='noise size, default=128')
+    parser.add_argument("--orthogonal_penalty", type=bool_type, default='True',
+                        help='orthogonal penalty, heavily increases gpu memory consumption, default=True')
     parser.add_argument("--num_workers", type=int, default=0,
                         help='num_workers for data_loader, default=0')
     parser.add_argument("--n_epoch", type=int, default=5,
@@ -68,16 +77,21 @@ if __name__ == '__main__':
     inception = Inception().to(cpu_device)  # no need of DataParallel here
     # fid_manager = FIDManager(val_data, args.noise_size, generator, inception, device)
     # measure performance of moving average generator
-    fid_manager = FIDManager(val_data, args.noise_size, ma_generator, inception, device)
+    fid_manager = FIDManager(
+        val_data, args.noise_size,
+        ma_generator, inception,
+        gpu_device, cpu_device
+    )
 
     # initialize trainer
     trainer = Trainer(
         generator, discriminator, ma_generator,
         train_data, val_data, fid_manager,
         criteria[args.criterion], loss_pairs[args.loss],
-        writer, args.logdir,
+        args.n_discriminator, writer, args.logdir,
         args.write_period, args.fid_period,
-        args.noise_size, gpu_device
+        args.noise_size, args.orthogonal_regularization,
+        gpu_device
     )
     print('done')
     # training
