@@ -66,11 +66,14 @@ class Trainer:
     def generate_images(self, n_images):
         # truncated normal noise special for BigGAN
         generated_images = []
+        generated_images_ma = []
         for i in range(n_images):
-            noise = truncated_normal(1, self.noise_size, device=self.gpu_device)  # z
+            n_noise = torch.randn(1, self.noise_size, device=self.gpu_device)
+            t_noise = truncated_normal(1, self.noise_size, device=self.gpu_device)
             with torch.no_grad():
-                generated_images.append(self.ma_generator(noise))  # G(z)
-        return torch.cat(generated_images)
+                generated_images.append(self.generator(n_noise))  # G(z)
+                generated_images_ma.append(self.ma_generator(t_noise))
+        return torch.cat(generated_images), torch.cat(generated_images_ma)
 
     def call_loss(self, loss, real_data):
         return loss(
@@ -112,7 +115,6 @@ class Trainer:
         real_data = real_data.to(self.gpu_device)
 
         loss_generator = self.train_generator(real_data)  # train generator once
-        loss_generator = 0.0
 
         # update moving average generator
         moving_average(self.ma_generator, self.generator)
@@ -131,9 +133,10 @@ class Trainer:
 
     def write_logs(self):
         n_images = 3  # 7 for DC and SA GANs, 3 for Big
-        fake_data = self.generate_images(n_images * n_images)
+        fake_data, fake_data_ma = self.generate_images(n_images * n_images)
         self.log_writer.write_logs(
             0.5 * (fake_data + 1.0),
+            0.5 * (fake_data_ma + 1.0)
         )
 
     def write_fid(self):
@@ -153,7 +156,8 @@ class Trainer:
                     desc='epoch_{}'.format(epoch),
                     ncols=90
             ):  # sad smile
-                self.train_step(data_loader)
+                step_statisctics = self.train_step(data_loader)
+                self.update_statistics(*step_statisctics)
                 if step % self.write_period == 0:
                     self.write_logs()
                 if step % self.fid_period == 0:

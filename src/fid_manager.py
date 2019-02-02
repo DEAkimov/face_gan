@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 from scipy import linalg
-from tqdm import tqdm
 
 
 class FIDManager:
@@ -36,7 +35,7 @@ class FIDManager:
     def get_activations(self):
         real_activations = []
         fake_activations = []
-        for real, _ in tqdm(self.data_loader):
+        for real, _ in self.data_loader:
             batch_size = real.size(0)
             real = real.to(self.gpu_device)
             with torch.no_grad():

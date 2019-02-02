@@ -20,9 +20,10 @@ class Writer:
                                scalar / self.write_period,
                                self.writes_done)
 
-    def _plot_images(self, fake_data):
+    def _plot_images(self, fake_data, fake_data_ma):
         nrow = 3  # 7 for DC and SA GANs, 3 for Big
         self.writer.add_image('fake', make_grid(fake_data, nrow=nrow), self.writes_done)
+        self.writer.add_image('fake_ma', make_grid(fake_data_ma, nrow=nrow), self.writes_done)
 
     def update_statistics(self, loss_gen, loss_dis, p_real, p_fake):
         self.loss_gen += loss_gen
@@ -30,7 +31,7 @@ class Writer:
         self.p_real += p_real
         self.p_fake += p_fake
 
-    def write_logs(self, fake_data):
+    def write_logs(self, fake_data, fake_data_ma):
         # write statistics
         self._write_scalar('loss/generator', self.loss_gen)
         self._write_scalar('loss/discriminator', self.loss_dis)
@@ -42,7 +43,7 @@ class Writer:
         self.p_real = 0.0
         self.p_fake = 0.0
         # plot images and update iterations
-        self._plot_images(fake_data)
+        self._plot_images(fake_data, fake_data_ma)
         self.writes_done += 1
 
     def write_fid(self, fid):
