@@ -113,6 +113,7 @@ def orthogonal_regularization(model, device):
             shape = param.shape[0]
             flatten = param.view(shape, -1)
             beta_squared = torch.mm(flatten, flatten.t())  # W^T.W
-            ones = torch.ones(shape, shape) - torch.eye(shape)  # 1 - I
-            penalty += ((beta_squared * ones) ** 2).sum()
+            ones = torch.ones(shape, shape, dtype=torch.float32)
+            diag = torch.eye(shape, dtype=torch.float32)
+            penalty += ((beta_squared * (ones - diag).to(device)) ** 2).sum()
     return penalty
