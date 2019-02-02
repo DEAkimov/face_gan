@@ -104,7 +104,7 @@ class Trainer:
         # s stands for 'statistic'
         s_loss_discriminator, s_dis_on_real, s_dis_on_fake = 0.0, 0.0, 0.0
         for _ in range(self.n_discriminator):  # train discriminator for n steps
-            real_data = next(data_loader)
+            real_data, _ = next(data_loader)
             real_data = real_data.to(self.gpu_device)
 
             loss_d, dis_on_real, dis_on_fake = self.train_discriminator(real_data)
@@ -113,7 +113,7 @@ class Trainer:
             s_dis_on_real += dis_on_real / self.n_discriminator
             s_dis_on_fake += dis_on_fake / self.n_discriminator
 
-        real_data = next(data_loader)
+        real_data, _ = next(data_loader)
         real_data = real_data.to(self.gpu_device)
 
         loss_generator = self.train_generator(real_data)  # train generator once
