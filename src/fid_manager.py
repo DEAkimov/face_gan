@@ -32,7 +32,7 @@ class FIDManager:
         fid = diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * np.trace(cov)
         return fid
 
-    def get_activations(self):
+    def get_activations(self, mean, std):
         real_activations = []
         fake_activations = []
         for real, _ in self.data_loader:
@@ -40,19 +40,21 @@ class FIDManager:
             real = real.to(self.gpu_device)
             with torch.no_grad():
                 real_activations.append(self.inception(real))
-                fake = []
-                for i in range(batch_size):
-                    noise = torch.randn(
-                        1, self.noise_size,
-                        device=self.gpu_device
-                    )
-                    fake.append(self.generator(noise).to(self.gpu_device))
-                fake_activations.append(self.inception(torch.cat(fake)))
+                # should be ok even when generate whole batch once
+                noise = torch.randn(
+                    batch_size, 
+                    self.noise_size,
+                    device=self.gpu_device
+                )
+                fake = std.to(self.gpu_device) 
+                       * self.generator(noise).to(self.gpu_device) 
+                       + mean.to(self.gpu_device)
+                fake_activations.append(self.inception(fake))
         return torch.cat(real_activations), torch.cat(fake_activations)
 
-    def __call__(self):
+    def __call__(self, mean, std):
         self.generator.eval()
-        real_activations, fake_activations = self.get_activations()
+        real_activations, fake_activations = self.get_activations(mean, std)
         mu1, sigma1 = self.statistics_from_activations(real_activations)
         mu2, sigma2 = self.statistics_from_activations(fake_activations)
         frechet_distance = self.frechet_distance(mu1, sigma1, mu2, sigma2)

@@ -11,10 +11,15 @@ from src.trainer import Trainer
 from src.writer import Writer
 from src.networks.inception import Inception
 from src.fid_manager import FIDManager
-from src.utils import criteria, loss_pairs, get_loader, get_networks
+from src.utils import criteria, loss_pairs, get_loader, get_networks, data_statistics
 
 
 if __name__ == '__main__':
+    def bool_type(arg):
+        if arg in ['True', 'true']:
+            return True
+        else:
+            return False
     # args
     parser = argparse.ArgumentParser(description='GAN training runner')
     parser.add_argument("architecture", type=str,
@@ -38,7 +43,9 @@ if __name__ == '__main__':
     parser.add_argument("--noise_size", type=int, default=128,
                         help='noise size, default=128')
     parser.add_argument("--orthogonal_penalty", type=float, default=1e-4,
-                        help='orthogonal penalty, heavily increases gpu memory consumption, default=1e-4')
+                        help='orthogonal penalty coefficent, default=1e-4')
+    parser.add_argument("--normalize", type=bool_type, default='True',
+                        help='normalize training data if True, default=True')
     parser.add_argument("--num_workers", type=int, default=0,
                         help='num_workers for data_loader, default=0')
     parser.add_argument("--n_epoch", type=int, default=5,
@@ -51,6 +58,7 @@ if __name__ == '__main__':
     print('    loss: {}'.format(args.loss))
     print('    criterion: {}'.format(args.criterion))
     print('    orthogonal: {}'.format(args.orthogonal_penalty))
+    print('    normalize: {}'.format(args.normalize))
     print('    data_path: {}'.format(args.data_path))
     print('    logdir: {}'.format(args.logdir))
     print('initializations...')
@@ -70,7 +78,6 @@ if __name__ == '__main__':
         args.num_workers)
     writer = Writer(args.logdir, args.write_period)
     inception = Inception().to(device)  # no need of DataParallel here
-    # fid_manager = FIDManager(val_data, args.noise_size, generator, inception, device)
     # measure performance of moving average generator
     fid_manager = FIDManager(
         val_data, args.noise_size,
@@ -86,7 +93,7 @@ if __name__ == '__main__':
         args.n_discriminator, writer, args.logdir,
         args.write_period, args.fid_period,
         args.noise_size, args.orthogonal_penalty,
-        device
+        args.normalize, device
     )
     print('done')
     # training

@@ -2,7 +2,7 @@ from tqdm import tqdm
 import torch
 from torch.optim import Adam
 
-from src.utils import truncated_normal, moving_average, orthogonal_regularization
+from src.utils import truncated_normal, moving_average, orthogonal_regularization, data_statistics
 
 
 class Trainer:
@@ -13,7 +13,7 @@ class Trainer:
                  log_writer, logdir,
                  write_period, fid_period,
                  noise_size, orthogonal_penalty,
-                 gpu_device):
+                 normalize, gpu_device):
         # nets, optimizers and criterion
         self.gpu_device = gpu_device
         self.generator = generator
@@ -24,7 +24,7 @@ class Trainer:
         # lr_g, lr_d = 4e-4, 1e-4
         # beta1, beta2 = 0.0, 0.9
         # =============== parameters for BigGAN ===============
-        lr_g, lr_d = 5e-5, 2e-4
+        lr_g, lr_d = 2e-4, 5e-5
         beta1, beta2 = 0.0, 0.999
         self.g_optim = Adam(self.generator.parameters(), lr_g, (beta1, beta2))
         self.d_optim = Adam(self.discriminator.parameters(), lr_d, (beta1, beta2))
@@ -33,6 +33,10 @@ class Trainer:
 
         # data and writer
         self.train_data_len = len(train_data)
+        if normalize:
+            self.train_mean, self.train_std = data_statistics(val_data)
+        else:
+            self.train_mean, self.train_std = 0.0, 1.0
         self.train_data = train_data
         self.val_data = val_data
         self.log_writer = log_writer
@@ -63,6 +67,12 @@ class Trainer:
         self.generator.load_state_dict(checkpoint['generator'])
         self.discriminator.load_state_dict(checkpoint['discriminator'])
 
+    def normalize(self, tensor):
+        return (tensor - self.train_mean) / self.train_std
+
+    def denormalize(self, tensor):
+        return self.train_std.to(self.device) * tensor + self.train_mean.to(self.device)
+
     def generate_images(self, n_images):
         # truncated normal noise special for BigGAN
         generated_images = []
@@ -71,8 +81,10 @@ class Trainer:
             n_noise = torch.randn(1, self.noise_size, device=self.gpu_device)
             t_noise = truncated_normal(1, self.noise_size, device=self.gpu_device)
             with torch.no_grad():
-                generated_images.append(self.generator(n_noise))  # G(z)
-                generated_images_ma.append(self.ma_generator(t_noise))
+                generated = self.denormalize(self.generator(n_noise))
+                generated_ma = self.denormalize(self.ma_generator(t_noise))
+                generated_images.append(generated)
+                generated_images_ma.append(generated_ma)
         return torch.cat(generated_images), torch.cat(generated_images_ma)
 
     def call_loss(self, loss, real_data):
@@ -91,9 +103,9 @@ class Trainer:
     def train_generator(self, real_data):
         self.g_optim.zero_grad()
         loss_generator = self.call_loss(self.loss_gen, real_data)
-        # if self.orthogonal_penalty:
-        #     penalty = orthogonal_regularization(self.generator, self.gpu_device)
-        #     loss_generator = loss_generator + 1e-4 * penalty
+        if self.orthogonal_penalty:
+            penalty = orthogonal_regularization(self.generator, self.gpu_device)
+            loss_generator = loss_generator + 1e-4 * penalty
         loss_generator.backward()
         self.g_optim.step()
         return loss_generator.item()
@@ -103,6 +115,7 @@ class Trainer:
         s_loss_discriminator, s_dis_on_real, s_dis_on_fake = 0.0, 0.0, 0.0
         for _ in range(self.n_discriminator):  # train discriminator for n steps
             real_data, _ = next(data_loader)
+            real_data = self.normalize(real_data)
             real_data = real_data.to(self.gpu_device)
 
             loss_d, dis_on_real, dis_on_fake = self.train_discriminator(real_data)
@@ -112,6 +125,7 @@ class Trainer:
             s_dis_on_fake += dis_on_fake / self.n_discriminator
 
         real_data, _ = next(data_loader)
+        real_data = self.normalize(real_data)
         real_data = real_data.to(self.gpu_device)
 
         loss_generator = self.train_generator(real_data)  # train generator once
@@ -140,7 +154,7 @@ class Trainer:
         )
 
     def write_fid(self):
-        fid = self.fid_manager()
+        fid = self.fid_manager(self.train_mean, self.train_std)
         self.log_writer.write_fid(fid)
 
     def train(self, n_epoch):

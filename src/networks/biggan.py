@@ -2,7 +2,8 @@
 # but BigGAN-like architecture with
 # self-attention, same block structure,
 # hierarchical latent space,
-# but without any conditioning (which is sad)
+# but without any conditioning (which is sad) 
+# and with MUCH smaller number of parameters
 
 
 import torch.nn as nn
@@ -17,7 +18,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         self.ch = ch = 4
         self.noise_size = noise_size
-        self.linear = sn(nn.Linear(20, 4 * 4 * 16 * ch))
+        self.linear = sn(nn.Linear(20, 4 * 4 * 16 * ch, bias=False))
         self.blocks = nn.ModuleList([
             BlockUp(16 * ch, 16 * ch, 20),
             BlockUp(16 * ch, 8 * ch, 20),
@@ -62,7 +63,7 @@ class Discriminator(nn.Module):
         self.final_layers = nn.Sequential(
             nn.ReLU(),
             AvgPooling(ch * 16),
-            sn(nn.Linear(ch * 16, 1))
+            sn(nn.Linear(ch * 16, 1, bias=False))
         )
 
     def forward(self, image):

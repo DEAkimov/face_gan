@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import torch
 from torch.nn.parallel import DataParallel
 from torch.utils.data import DataLoader
@@ -117,3 +118,18 @@ def orthogonal_regularization(model, device):
             diag = torch.eye(shape, dtype=torch.float32)
             penalty += ((beta_squared * (ones - diag).to(device)) ** 2).sum()
     return penalty
+
+def data_statistics(data_loader):
+    print('calculating data statistics...')
+    sample = data_loader.dataset[0][0]
+    mean = torch.zeros_like(sample)
+    var = torch.zeros_like(sample)
+    for (x, _) in tqdm(data_loader):
+        mean += x.mean(0)
+        var += (x ** 2).mean(0)
+    mean = mean / len(data_loader)
+    total_size = len(data_loader) * data_loader.batch_size
+    var = var / len(data_loader) - mean ** 2
+    var = (total_size / (total_size - 1)) * var
+    std = torch.sqrt(var)
+    return mean, std
