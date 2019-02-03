@@ -5,7 +5,7 @@ from torchvision import models
 
 
 class Inception(nn.Module):
-    def __init__(self):
+    def __init__(self, local_rank):
         super(Inception, self).__init__()
         # this super-simple copy-paste architecture works just fine
         # with 128x128 and 256x256 images, but fails with 64x64,
@@ -29,7 +29,8 @@ class Inception(nn.Module):
             nn.AdaptiveAvgPool2d(output_size=(1, 1))
         )
         self.net.eval()
-        self.init_print()
+        if local_rank == 0:
+            self.init_print()
 
     def init_print(self):
         num_params = sum(p.numel() for p in self.net.parameters())

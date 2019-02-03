@@ -1,8 +1,8 @@
 import torch
 from torch.optim import Adam
+from tqdm import tqdm
 
 from src.utils import truncated_normal, moving_average, orthogonal_regularization, data_statistics
-from src.tqdm import tqdm
 
 
 class Trainer:
@@ -164,18 +164,18 @@ class Trainer:
         self.log_writer.write_fid(fid, fid_ma)
 
     def train(self, n_epoch):
-        print('start training for {} epoch'.format(n_epoch))
+        if self.local_rank == 0:
+            print('start training for {} epoch'.format(n_epoch))
         self.discriminator.train()
         self.generator.train()
         self.ma_generator.eval()
         step = 0
         for epoch in range(n_epoch):
             data_loader = iter(self.train_data)
-            for i in tqdm(
-                    range(self.train_data_len // (self.n_discriminator + 1)),
-                    desc='epoch_{}'.format(epoch),
-                    ncols=90
-            ):  # sad smile
+            pb = range(self.train_data_len // (self.n_discriminator + 1))
+            if self.local_rank == 0:
+                pb = tqdm(pb, desc='epoch_{}'.format(epoch), ncols=90)
+            for _ in pb:
                 step_statistics = self.train_step(data_loader)
                 self.update_statistics(*step_statistics)
                 if step % self.write_period == 0:
@@ -185,4 +185,5 @@ class Trainer:
                 step += 1
             if self.local_rank == 0:
                 self.save(self.logdir + '/checkpoint.pth')
-        print('training done')
+        if self.local_rank == 0:
+            print('training done')

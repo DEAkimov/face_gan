@@ -20,8 +20,7 @@ from src.trainer import Trainer
 from src.writer import Writer
 from src.networks.inception import Inception
 from src.fid_manager import FIDManager
-from src.utils import criteria, loss_pairs, get_loader, get_networks, set_random_seed
-from src.tqdm import disable_tqdm
+from src.utils import criteria, loss_pairs, get_loader, get_networks, set_random_seed, sync
 
 
 if __name__ == '__main__':
@@ -79,8 +78,9 @@ if __name__ == '__main__':
         print('    data_path: {}'.format(args.data_path))
         print('    logdir: {}'.format(args.logdir))
         print('initializations...')
+        real_writer = True
     else:
-        disable_tqdm()
+        real_writer = False
 
     # initialize all necessary objects
     cuda = torch.cuda.is_available()
@@ -97,11 +97,11 @@ if __name__ == '__main__':
         args.data_path + '/val', False,
         args.batch_size, args.img_size,
         args.num_workers)
-    if local_rank == 0:
-        writer = Writer(args.logdir, args.write_period)
-    else:
-        writer = Writer(args.logdir, args.write_period)
-    inception = DistributedDataParallel(Inception().to(device))
+    writer = Writer(real_writer, device, args.write_period, args.logdir)
+    inception = DistributedDataParallel(
+        Inception(local_rank).to(device),
+        device_ids=[local_rank]
+    )
     # measure performance of moving average generator
     fid_manager = FIDManager(
         val_data, args.noise_size,
@@ -120,6 +120,7 @@ if __name__ == '__main__':
         args.noise_size, args.orthogonal_penalty,
         args.normalize, device
     )
+    sync(device)
     if local_rank == 0:
         print('done')
     # training

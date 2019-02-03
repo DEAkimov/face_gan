@@ -159,3 +159,8 @@ def set_random_seed(seed=42):
     torch.cuda.manual_seed_all(seed)
     torch.cuda.random.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
+
+
+def sync(device):
+    sync_tensor = torch.tensor(0, device=device)
+    dist.all_reduce(sync_tensor)
