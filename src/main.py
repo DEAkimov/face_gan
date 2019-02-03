@@ -11,8 +11,7 @@ import sys
 import argparse
 import torch
 import torch.distributed as dist
-# TODO:
-from torch.nn.parallel import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 
 project_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 sys.path.append(project_dir)
@@ -21,7 +20,7 @@ from src.trainer import Trainer
 from src.writer import Writer
 from src.networks.inception import Inception
 from src.fid_manager import FIDManager
-from src.utils import criteria, loss_pairs, get_loader, get_networks, data_statistics
+from src.utils import criteria, loss_pairs, get_loader, get_networks, set_random_seed
 from src.tqdm import disable_tqdm
 
 
@@ -54,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument("--noise_size", type=int, default=128,
                         help='noise size, default=128')
     parser.add_argument("--orthogonal_penalty", type=float, default=1e-4,
-                        help='orthogonal penalty coefficent, default=1e-4')
+                        help='orthogonal penalty coefficient, default=1e-4')
     parser.add_argument("--normalize", type=bool_type, default='True',
                         help='normalize training data if True, default=True')
     parser.add_argument("--num_workers", type=int, default=0,
@@ -67,6 +66,7 @@ if __name__ == '__main__':
     local_rank = args.local_rank
     dist.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
+    set_random_seed(42)
 
     if local_rank == 0:
         # some prints
@@ -97,15 +97,17 @@ if __name__ == '__main__':
         args.data_path + '/val', False,
         args.batch_size, args.img_size,
         args.num_workers)
-    writer = Writer(args.logdir, args.write_period)
-    # TODO
-    inception = None  # DataParallel(Inception().to(device))
+    if local_rank == 0:
+        writer = Writer(args.logdir, args.write_period)
+    else:
+        writer = Writer(args.logdir, args.write_period)
+    inception = DistributedDataParallel(Inception().to(device))
     # measure performance of moving average generator
-    fid_manager = None  #FIDManager(
-    #     val_data, args.noise_size,
-    #     generator, ma_generator, 
-    #     inception, device
-    # )
+    fid_manager = FIDManager(
+        val_data, args.noise_size,
+        generator, ma_generator,
+        inception, device
+    )
 
     # initialize trainer
     trainer = Trainer(

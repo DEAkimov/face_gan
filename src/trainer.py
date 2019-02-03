@@ -176,12 +176,13 @@ class Trainer:
                     desc='epoch_{}'.format(epoch),
                     ncols=90
             ):  # sad smile
-                step_statisctics = self.train_step(data_loader)
-                # self.update_statistics(*step_statisctics)
-                # if step % self.write_period == 0:
-                #     self.write_logs()
-                # if step % self.fid_period == 0:
-                #     self.write_fid()
+                step_statistics = self.train_step(data_loader)
+                self.update_statistics(*step_statistics)
+                if step % self.write_period == 0:
+                    self.write_logs()
+                if step % self.fid_period == 0:
+                    self.write_fid()
                 step += 1
-            self.save(self.logdir + '/checkpoint.pth')
+            if self.local_rank == 0:
+                self.save(self.logdir + '/checkpoint.pth')
         print('training done')

@@ -1,11 +1,22 @@
+import torch
+import torch.distributed as dist
 from tensorboardX import SummaryWriter
 from torchvision.utils import make_grid
 
 
 class Writer:
-    def __init__(self, logdir, write_period):
+    def __init__(self,
+                 real, device,
+                 write_period,
+                 logdir=None):
+        self.real = real
+        self.device = device
+        self.world_size = dist.get_world_size()
         self.write_period = write_period
-        self.writer = SummaryWriter(logdir)
+        if real:
+            self.writer = SummaryWriter(logdir)
+        else:
+            self.writer = None
 
         # statistics
         self.writes_done = 0
@@ -16,14 +27,17 @@ class Writer:
         self.p_fake = 0.0
 
     def _write_scalar(self, tag, scalar):
-        self.writer.add_scalar(tag,
-                               scalar / self.write_period,
-                               self.writes_done)
+        scalar = scalar / (self.write_period * self.world_size)
+        scalar = torch.tensor(scalar, device=self.device)
+        dist.all_reduce(scalar)
+        if self.real:
+            self.writer.add_scalar(tag, scalar.item(), self.writes_done)
 
     def _plot_images(self, fake_data, fake_data_ma):
         nrow = 3  # 7 for DC and SA GANs, 3 for Big
-        self.writer.add_image('fake', make_grid(fake_data, nrow=nrow), self.writes_done)
-        self.writer.add_image('fake_ma', make_grid(fake_data_ma, nrow=nrow), self.writes_done)
+        if self.real:
+            self.writer.add_image('fake', make_grid(fake_data, nrow=nrow), self.writes_done)
+            self.writer.add_image('fake_ma', make_grid(fake_data_ma, nrow=nrow), self.writes_done)
 
     def update_statistics(self, loss_gen, loss_dis, p_real, p_fake):
         self.loss_gen += loss_gen
@@ -47,6 +61,11 @@ class Writer:
         self.writes_done += 1
 
     def write_fid(self, fid, fid_ma):
-        self.writer.add_scalar('fid', fid, self.fids_done)
-        self.writer.add_scalar('fid_ma', fid_ma, self.fids_done)
+        fid = torch.tensor(fid / self.world_size, device=self.device)
+        dist.all_reduce(fid)
+        fid_ma = torch.tensor(fid_ma / self.world_size, device=self.device)
+        dist.all_reduce(fid_ma)
+        if self.real:
+            self.writer.add_scalar('fid', fid, self.fids_done)
+            self.writer.add_scalar('fid_ma', fid_ma, self.fids_done)
         self.fids_done += 1

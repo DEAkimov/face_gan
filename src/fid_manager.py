@@ -42,21 +42,20 @@ class FIDManager:
 
     def get_fakes(self, batch_size, mean, std):
         noise = torch.randn(
-            batch_size, 
+            batch_size,
             self.noise_size,
             device=self.gpu_device
         )
         fake = self.generator(noise).to(self.gpu_device)
         fake = self.denormalize(fake, mean, std)
         t_noise = truncated_normal(
-            batch_size, 
+            batch_size,
             self.noise_size,
             device=self.gpu_device
         )
-        ma_fake = self.generator_ma(noise).to(self.gpu_device)
+        ma_fake = self.generator_ma(t_noise).to(self.gpu_device)
         ma_fake = self.denormalize(ma_fake, mean, std)
         return fake, ma_fake
-
 
     def get_activations(self, mean, std):
         real_activations = []
@@ -71,9 +70,10 @@ class FIDManager:
                 fake, fake_ma = self.get_fakes(batch_size, mean, std)
                 fake_activations.append(self.inception(fake))
                 fake_ma_activations.append(self.inception(fake_ma))
-        return torch.cat(real_activations), \
-               torch.cat(fake_activations), \
-               torch.cat(fake_ma_activations)
+        real = torch.cat(real_activations)
+        fake = torch.cat(fake_activations)
+        fake_ma = torch.cat(fake_ma_activations)
+        return real, fake, fake_ma
 
     def __call__(self, mean, std):
         self.generator.eval()

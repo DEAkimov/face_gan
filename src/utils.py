@@ -1,3 +1,5 @@
+import random
+import numpy as np
 from copy import deepcopy
 from tqdm import tqdm
 import torch
@@ -132,6 +134,7 @@ def orthogonal_regularization(model, device):
             penalty += ((beta_squared * (ones - diag).to(device)) ** 2).sum()
     return penalty
 
+
 def data_statistics(data_loader):
     print('calculating data statistics...')
     sample = data_loader.dataset[0][0]
@@ -146,3 +149,13 @@ def data_statistics(data_loader):
     var = (total_size / (total_size - 1)) * var
     std = torch.sqrt(var)
     return mean, std
+
+
+def set_random_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.random.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
