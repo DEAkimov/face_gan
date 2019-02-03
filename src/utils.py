@@ -1,6 +1,9 @@
+from copy import deepcopy
 from tqdm import tqdm
 import torch
-from torch.nn.parallel import DataParallel
+import torch.distributed as dist
+from torch.utils.data.distributed import DistributedSampler
+from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
@@ -44,6 +47,7 @@ def get_loader(path, train, batch_size, image_size, num_workers):
     # when .forward() called.
     # The only necessary transform [-1, 1] -> [0, 1]
     # moved to the Inception directly
+    local_rank = dist.get_rank()
     data_set = ImageFolder(path,
                            transform=transforms.Compose([
                                transforms.Resize(image_size),
@@ -51,17 +55,23 @@ def get_loader(path, train, batch_size, image_size, num_workers):
                                transforms.ToTensor(),
                                transforms.Lambda(lambda x: 2. * x - 1.)
                            ]))
+    sampler = DistributedSampler(
+        data_set, 
+        num_replicas=dist.get_world_size(),
+        rank=local_rank
+    )
     data_loader = DataLoader(data_set,
                              batch_size=batch_size,
-                             shuffle=train,
+                             sampler=sampler,
                              num_workers=num_workers)
     train_or_val = 'train' if train else 'val'
-    print(
-        '    {} data loader initialized, '
-        'batch_size = {}, len(data_loader) = {}'.format(
-            train_or_val, batch_size, len(data_loader)
+    if local_rank == 0:
+        print(
+            '    {} data loader initialized, '
+            'batch_size = {}, len(data_loader) = {}'.format(
+                train_or_val, batch_size, len(data_loader)
+            )
         )
-    )
     return data_loader
 
 
@@ -69,18 +79,21 @@ def get_networks(nets_type, noise_size, device):
     def count_params(net):
         return sum(p.numel() for p in net.parameters())
 
+    local_rank = dist.get_rank()
     gen, dis = networks[nets_type]
     gen, dis = gen(noise_size).to(device), dis().to(device)
-    gen = DataParallel(gen)
-    dis = DataParallel(dis)
-    print(
-        '    networks initialized, '
-        '#params(gen) = {}, '
-        '#params(dis) = {}'.format(
-            count_params(gen), count_params(dis)
+    gen_dp = DistributedDataParallel(gen, device_ids=[local_rank])
+    dis_dp = DistributedDataParallel(dis, device_ids=[local_rank])
+    gen_ma = DistributedDataParallel(deepcopy(gen), device_ids=[local_rank])
+    if local_rank == 0:
+        print(
+            '    networks initialized, '
+            '#params(gen) = {}, '
+            '#params(dis) = {}'.format(
+                count_params(gen), count_params(dis)
+            )
         )
-    )
-    return gen, dis
+    return gen_dp, dis_dp, gen_ma
 
 
 def moving_average(model_old, model_new, alpha=0.9999):

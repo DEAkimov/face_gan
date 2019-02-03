@@ -24,7 +24,7 @@ class Inception(nn.Module):
             inception.Mixed_6a, inception.Mixed_6b, inception.Mixed_6c,
             inception.Mixed_6d, inception.Mixed_6e,
             # block 3 - commented for 64x64 and 128x128 images
-            inception.Mixed_7a, inception.Mixed_7b, inception.Mixed_7c,
+            # inception.Mixed_7a, inception.Mixed_7b, inception.Mixed_7c,
             # Keep avg_pool
             nn.AdaptiveAvgPool2d(output_size=(1, 1))
         )
@@ -40,7 +40,7 @@ class Inception(nn.Module):
         # transform [-1, +1] called just before net here
         image = 0.5 * (image + 1.0)
         net_out = self.net(0.5 * (image + 1.0))
-        size = 2048  # 768 for DC and SA GANs, 2048 for BigGAN
+        size = 768  # 768 for DC and SA GANs, 2048 for BigGAN
         return net_out.view(-1, size)
 
 

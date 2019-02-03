@@ -46,6 +46,7 @@ class Writer:
         self._plot_images(fake_data, fake_data_ma)
         self.writes_done += 1
 
-    def write_fid(self, fid):
+    def write_fid(self, fid, fid_ma):
         self.writer.add_scalar('fid', fid, self.fids_done)
+        self.writer.add_scalar('fid_ma', fid_ma, self.fids_done)
         self.fids_done += 1

@@ -1,12 +1,13 @@
-from tqdm import tqdm
 import torch
 from torch.optim import Adam
 
 from src.utils import truncated_normal, moving_average, orthogonal_regularization, data_statistics
+from src.tqdm import tqdm
 
 
 class Trainer:
     def __init__(self,
+                 local_rank,
                  generator, discriminator, ma_generator,
                  train_data, val_data, fid_manager,
                  criterion, loss, n_discriminator,
@@ -14,6 +15,7 @@ class Trainer:
                  write_period, fid_period,
                  noise_size, orthogonal_penalty,
                  normalize, gpu_device):
+        self.local_rank = local_rank
         # nets, optimizers and criterion
         self.gpu_device = gpu_device
         self.generator = generator
@@ -36,7 +38,8 @@ class Trainer:
         if normalize:
             self.train_mean, self.train_std = data_statistics(val_data)
         else:
-            self.train_mean, self.train_std = 0.0, 1.0
+            self.train_mean = torch.tensor(0.0, dtype=torch.float32)
+            self.train_std = torch.tensor(1.0, dtype=torch.float32)
         self.train_data = train_data
         self.val_data = val_data
         self.log_writer = log_writer
@@ -49,7 +52,8 @@ class Trainer:
         self.write_period = write_period
         self.fid_period = fid_period
 
-        self.init_print()
+        if self.local_rank == 0:
+            self.init_print()
 
     def init_print(self):
         print('    trainer initialized')
@@ -71,7 +75,9 @@ class Trainer:
         return (tensor - self.train_mean) / self.train_std
 
     def denormalize(self, tensor):
-        return self.train_std.to(self.device) * tensor + self.train_mean.to(self.device)
+        tensor = self.train_std.to(self.gpu_device) * tensor
+        tensor = tensor + self.train_mean.to(self.gpu_device)
+        return tensor
 
     def generate_images(self, n_images):
         # truncated normal noise special for BigGAN
@@ -154,8 +160,8 @@ class Trainer:
         )
 
     def write_fid(self):
-        fid = self.fid_manager(self.train_mean, self.train_std)
-        self.log_writer.write_fid(fid)
+        fid, fid_ma = self.fid_manager(self.train_mean, self.train_std)
+        self.log_writer.write_fid(fid, fid_ma)
 
     def train(self, n_epoch):
         print('start training for {} epoch'.format(n_epoch))
@@ -171,11 +177,11 @@ class Trainer:
                     ncols=90
             ):  # sad smile
                 step_statisctics = self.train_step(data_loader)
-                self.update_statistics(*step_statisctics)
-                if step % self.write_period == 0:
-                    self.write_logs()
-                if step % self.fid_period == 0:
-                    self.write_fid()
+                # self.update_statistics(*step_statisctics)
+                # if step % self.write_period == 0:
+                #     self.write_logs()
+                # if step % self.fid_period == 0:
+                #     self.write_fid()
                 step += 1
             self.save(self.logdir + '/checkpoint.pth')
         print('training done')

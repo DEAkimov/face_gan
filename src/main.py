@@ -1,8 +1,18 @@
+import multiprocessing as mp
+
+if __name__ == '__main__':
+    try:
+        mp.set_start_method('forkserver')
+    except RuntimeError:
+        pass
+
 import os
 import sys
 import argparse
 import torch
-from copy import deepcopy
+import torch.distributed as dist
+# TODO:
+from torch.nn.parallel import DataParallel
 
 project_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 sys.path.append(project_dir)
@@ -12,6 +22,7 @@ from src.writer import Writer
 from src.networks.inception import Inception
 from src.fid_manager import FIDManager
 from src.utils import criteria, loss_pairs, get_loader, get_networks, data_statistics
+from src.tqdm import disable_tqdm
 
 
 if __name__ == '__main__':
@@ -50,24 +61,34 @@ if __name__ == '__main__':
                         help='num_workers for data_loader, default=0')
     parser.add_argument("--n_epoch", type=int, default=5,
                         help='number of training epoch, default=5')
+    parser.add_argument('--local_rank', type=int)
     args, remaining = parser.parse_known_args()
 
-    # some prints
-    print('----------- Training script -----------')
-    print('experiment settings:')
-    print('    loss: {}'.format(args.loss))
-    print('    criterion: {}'.format(args.criterion))
-    print('    orthogonal: {}'.format(args.orthogonal_penalty))
-    print('    normalize: {}'.format(args.normalize))
-    print('    data_path: {}'.format(args.data_path))
-    print('    logdir: {}'.format(args.logdir))
-    print('initializations...')
+    local_rank = args.local_rank
+    dist.init_process_group(backend='nccl', init_method='env://')
+    torch.cuda.set_device(local_rank)
+
+    if local_rank == 0:
+        # some prints
+        print('----------- Training script -----------')
+        print('experiment settings:')
+        print('    loss: {}'.format(args.loss))
+        print('    criterion: {}'.format(args.criterion))
+        print('    orthogonal: {}'.format(args.orthogonal_penalty))
+        print('    normalize: {}'.format(args.normalize))
+        print('    data_path: {}'.format(args.data_path))
+        print('    logdir: {}'.format(args.logdir))
+        print('initializations...')
+    else:
+        disable_tqdm()
 
     # initialize all necessary objects
     cuda = torch.cuda.is_available()
+    # training on cpu will take approximately +inf time
     device = torch.device('cuda' if cuda else 'cpu')
-    generator, discriminator = get_networks(args.architecture, args.noise_size, device)
-    ma_generator = deepcopy(generator)  # moving average
+    generator, discriminator, ma_generator = get_networks(
+        args.architecture, args.noise_size, device
+    )
     train_data = get_loader(
         args.data_path + '/train', True,
         args.batch_size, args.img_size,
@@ -77,16 +98,18 @@ if __name__ == '__main__':
         args.batch_size, args.img_size,
         args.num_workers)
     writer = Writer(args.logdir, args.write_period)
-    inception = Inception().to(device)  # no need of DataParallel here
+    # TODO
+    inception = None  # DataParallel(Inception().to(device))
     # measure performance of moving average generator
-    fid_manager = FIDManager(
-        val_data, args.noise_size,
-        ma_generator, inception,
-        device
-    )
+    fid_manager = None  #FIDManager(
+    #     val_data, args.noise_size,
+    #     generator, ma_generator, 
+    #     inception, device
+    # )
 
     # initialize trainer
     trainer = Trainer(
+        local_rank,
         generator, discriminator, ma_generator,
         train_data, val_data, fid_manager,
         criteria[args.criterion], loss_pairs[args.loss],
@@ -95,6 +118,7 @@ if __name__ == '__main__':
         args.noise_size, args.orthogonal_penalty,
         args.normalize, device
     )
-    print('done')
+    if local_rank == 0:
+        print('done')
     # training
     trainer.train(args.n_epoch)

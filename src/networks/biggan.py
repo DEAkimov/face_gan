@@ -16,13 +16,12 @@ from src.networks.self_attention import SelfAttention
 class Generator(nn.Module):
     def __init__(self, noise_size):
         super(Generator, self).__init__()
-        self.ch = ch = 4
+        self.ch = ch = 64
         self.noise_size = noise_size
         self.linear = sn(nn.Linear(20, 4 * 4 * 16 * ch, bias=False))
         self.blocks = nn.ModuleList([
             BlockUp(16 * ch, 16 * ch, 20),
             BlockUp(16 * ch, 8 * ch, 20),
-            BlockUp(8 * ch, 8 * ch, 20),
             BlockUp(8 * ch, 4 * ch, 20),
             BlockUp(4 * ch, 2 * ch, 20),
         ])
@@ -31,7 +30,7 @@ class Generator(nn.Module):
 
         self.final_layers = nn.Sequential(
             nn.BatchNorm2d(1 * ch), nn.ReLU(),
-            nn.Conv2d(1 * ch, 3, 3, padding=1, bias=False),
+            sn(nn.Conv2d(1 * ch, 3, 3, padding=1, bias=False)),
             nn.Tanh()
         )
 
@@ -49,20 +48,18 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        ch = 4
+        ch = 64
         self.conv = nn.Sequential(
             BlockDown(3, 1 * ch),
+            SelfAttention(1 * ch),
             BlockDown(1 * ch, 2 * ch),
-            SelfAttention(2 * ch),
             BlockDown(2 * ch, 4 * ch),
             BlockDown(4 * ch, 8 * ch),
-            BlockDown(8 * ch, 8 * ch),
             BlockDown(8 * ch, 16 * ch),
             Block(16 * ch),
         )
         self.final_layers = nn.Sequential(
-            nn.ReLU(),
-            AvgPooling(ch * 16),
+            nn.ReLU(), AvgPooling(ch * 16),
             sn(nn.Linear(ch * 16, 1, bias=False))
         )
 
